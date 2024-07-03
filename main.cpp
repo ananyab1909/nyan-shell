@@ -219,17 +219,11 @@ void rmdirCommand(const vector<string>& args) {
         printf("Error: Unable to delete directory\n");
     }
     #elif __linux__
-    DIR* dp;
-    if ((dp = opendir(dir.c_str())) == NULL) {
-        cout << "Error: Directory does not exist" << endl;
-        return;
-    }
-    closedir(dp);
-
-    if (remove(dir.c_str()) == 0) {
-        cout << "Directory deleted successfully!" << endl;
+    string cmd = "rm -rf " + file;
+    if (system(cmd.c_str()) == 0) {
+        cout << "File deleted successfully!" << endl;
     } else {
-        cout << "Error: Unable to delete directory" << endl;
+        cout << "Error: Unable to delete file" << endl;
     }
     #endif
 }
@@ -433,10 +427,11 @@ void rmCommand(const vector<string>& args) {
         cout << "Error: Unable to delete file." << endl;
     }
     #elif __linux__
-    if (remove(file.c_str()) == 0) {
+    string cmd = "rm -rf " + file;
+    if (system(cmd.c_str()) == 0) {
         cout << "File deleted successfully!" << endl;
     } else {
-        cout << "Error: Unable to delete file." << endl;
+        cout << "Error: Unable to delete file" << endl;
     }
     #endif
 }
