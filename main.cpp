@@ -14,10 +14,12 @@
 #include<bitset>
 #include<unistd.h>
 #include<sys/types.h>
-#include<windows.h>
 #include<sstream>
 #include<signal.h>
 #include<set>
+#ifdef _WIN32
+#include<windows.h>
+#endif
 
 using namespace std;
 
@@ -206,6 +208,7 @@ void rmdirCommand(const vector<string>& args) {
     string dir = args[1];
     dir.erase(0, dir.find_first_not_of(" \t")); 
     dir.erase(dir.find_last_not_of(" \t") + 1);
+    #ifdef _WIN32
     char cmd[256];
     sprintf(cmd, "del /q /s /f \"%s\\*\"", dir.c_str());
     system(cmd);
@@ -215,6 +218,20 @@ void rmdirCommand(const vector<string>& args) {
     } else {
         printf("Error: Unable to delete directory\n");
     }
+    #elif __linux__
+    DIR* dp;
+    if ((dp = opendir(dir.c_str())) == NULL) {
+        cout << "Error: Directory does not exist" << endl;
+        return;
+    }
+    closedir(dp);
+
+    if (remove(dir.c_str()) == 0) {
+        cout << "Directory deleted successfully!" << endl;
+    } else {
+        cout << "Error: Unable to delete directory" << endl;
+    }
+    #endif
 }
 
 void touchCommand(const vector<string>& args) {
@@ -225,6 +242,7 @@ void touchCommand(const vector<string>& args) {
     string dir = args[1];
     dir.erase(0, dir.find_first_not_of(" \t")); 
     dir.erase(dir.find_last_not_of(" \t") + 1); 
+    #ifdef _WIN32
     if (_access(dir.c_str(), 0) == 0) {
         cout << "File already exists!" << endl;
     }
@@ -232,6 +250,19 @@ void touchCommand(const vector<string>& args) {
         ofstream(args[1]).close();
         cout<< "File created successfully!"<<endl;
     }
+    #elif __linux__
+    if (f.good()) {
+        cout << "File already exists!" << endl;
+    } else {
+        ofstream outfile(file.c_str());
+        if (outfile.is_open()) {
+            outfile.close();
+            cout << "File created successfully!" << endl;
+        } else {
+            cout << "Error: unable to create file" << endl;
+        }
+    }
+    #endif
 }
 
 void catCommand(const vector<string>& args) {
@@ -386,6 +417,7 @@ void rmCommand(const vector<string>& args) {
         return;
     }
     string file = args[1];
+    #ifdef _WIN32
     file.erase(0, file.find_first_not_of(" \t")); 
     file.erase(file.find_last_not_of(" \t") + 1);
     char cmd[256];
@@ -396,6 +428,13 @@ void rmCommand(const vector<string>& args) {
     } else {
         cout << "Error: Unable to delete file." << endl;
     }
+    #elif __linux__
+    if (remove(file.c_str()) == 0) {
+        cout << "File deleted successfully!" << endl;
+    } else {
+        cout << "Error: Unable to delete file." << endl;
+    }
+    #endif
 }
 
 void gzipCommand(const vector<string>& args) {
