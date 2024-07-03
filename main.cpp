@@ -219,7 +219,7 @@ void rmdirCommand(const vector<string>& args) {
         printf("Error: Unable to delete directory\n");
     }
     #elif __linux__
-    string cmd = "rm -rf " + file;
+    string cmd = "rm -rf " + dir;
     if (system(cmd.c_str()) == 0) {
         cout << "File deleted successfully!" << endl;
     } else {
@@ -510,50 +510,7 @@ void dfCommand(const vector<string>& args) {
     }
 
     #elif __linux__
-    ifstream file("/proc/mounts");
-    string line, path, mountPoint, fsType, dummy;
-
-    cout << "Filesystem      1K-blocks      Used Available Use% Mounted on\n";
-
-    while (getline(file, line)) {
-        istringstream iss(line);
-        iss >> dummy >> path >> dummy >> dummy >> dummy >> mountPoint >> fsType >> dummy;
-
-        ifstream statFile("/proc/diskstats");
-        string statLine;
-        bool found = false;
-
-        while (getline(statFile, statLine)) {
-            istringstream statIss(statLine);
-            string statDummy, statPath;
-            statIss >> statDummy >> statPath >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy;
-
-            if (statPath == path) {
-                found = true;
-                break;
-            }
-        }
-
-        statFile.close();
-
-        if (found) {
-            ifstream sysFile("/sys/block/" + path.substr(5) + "/size");
-            string sysLine;
-            getline(sysFile, sysLine);
-            int totalBlocks = stoi(sysLine) * 1024;
-
-            ifstream usedFile("/sys/block/" + path.substr(5) + "/used");
-            getline(usedFile, sysLine);
-            int usedBlocks = stoi(sysLine) * 1024;
-
-            int availableBlocks = totalBlocks - usedBlocks;
-            double usePercent = (double)usedBlocks / totalBlocks * 100;
-
-            cout << mountPoint << "         " << totalBlocks / 1024 << "         " << usedBlocks / 1024 << "         " << availableBlocks / 1024 << "         " << (int)usePercent << "%" << "         " << mountPoint << endl;
-        }
-    }
-
-    file.close();
+    system("df -h");
     #endif
 }
 
@@ -575,6 +532,7 @@ clock_t start = clock();
 
 void uptimeCommand(const vector<string>& args) {
     time_t now;
+    #ifdef _WIN32
     time(&now);
     clock_t end = clock();
     double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
@@ -582,8 +540,10 @@ void uptimeCommand(const vector<string>& args) {
     int elapsed_hours = static_cast<int>(elapsed_minutes / 60);
     elapsed_minutes %= 60;
     printf("%02d:%02d:%02d ", (localtime(&now))->tm_hour, (localtime(&now))->tm_min, (localtime(&now))->tm_sec);
-    
-    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << " " << "user" << "," <<endl;     
+    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << " " << "user" << "," <<endl;
+    #elif __linux__
+    system("uptime");
+    #endif     
 }
 
 void uniqCommand(const vector<string>& args) {
