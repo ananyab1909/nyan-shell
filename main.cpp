@@ -540,7 +540,7 @@ void uptimeCommand(const vector<string>& args) {
     int elapsed_hours = static_cast<int>(elapsed_minutes / 60);
     elapsed_minutes %= 60;
     printf("%02d:%02d:%02d ", (localtime(&now))->tm_hour, (localtime(&now))->tm_min, (localtime(&now))->tm_sec);
-    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << " " << "user" << "," <<endl;
+    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << "1" << "user" <<endl;
     #elif __linux__
     system("uptime");
     #endif     
@@ -567,6 +567,17 @@ void uniqCommand(const vector<string>& args) {
         }
     }
     file.close();
+}
+
+void wgetCommand(const vector<string>& args) {
+    #ifdef _WIN32
+    cout << "Windows doesnt support it" << endl;
+    #elif __linux__
+    string url = args[1];
+    string cmd = "wget " + url;
+    system(cmd.c_str());
+    cout << "File downloaded and stored successfully!" << endl;
+    #endif
 }
 
 void addCommand(const string& command) {
@@ -628,6 +639,7 @@ int main() {
     commandRegister["free"] = freeCommand;
     commandRegister["df"] = dfCommand;
     commandRegister["uniq"] = uniqCommand;
+    commandRegister["wget"] = wgetCommand;
 
     cout << "Logging in as root" << endl;
     
