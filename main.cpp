@@ -251,6 +251,10 @@ void touchCommand(const vector<string>& args) {
         cout<< "File created successfully!"<<endl;
     }
     #elif __linux__
+    string file = args[1];
+    file.erase(0, file.find_first_not_of(" \t"));
+    file.erase(file.find_last_not_of(" \t") + 1);
+    fstream f(file.c_str());
     if (f.good()) {
         cout << "File already exists!" << endl;
     } else {
