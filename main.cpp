@@ -3,15 +3,12 @@
 #include<vector>
 #include<map>
 #include<functional>
-#include<io.h>
 #include<cstdlib>
 #include<dirent.h>
 #include<sys/stat.h>
 #include<fstream>
 #include<cstdlib>
 #include<ctime>
-#include<c++/3.4.5/bits/basic_string.h>
-#include<c++/3.4.5/bits/char_traits.h>
 #include<unistd.h>
 #include<string.h>
 #include<bitset>
@@ -20,6 +17,7 @@
 #include<windows.h>
 #include<sstream>
 #include<signal.h>
+#include<set>
 
 using namespace std;
 
@@ -412,6 +410,115 @@ void gzipCommand(const vector<string>& args) {
     system(cmd.c_str());
 }
 
+void freeCommand(const vector<string>& args) {
+    #ifdef _WIN32
+    MEMORYSTATUSEX memStatus;
+    memStatus.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memStatus);
+
+    std::cout << "Memory Information:" << std::endl;
+    std::cout << "-------------------" << std::endl;
+    std::cout << "Total Physical Memory: " << memStatus.ullTotalPhys / 1024 << " MB" << std::endl;
+    std::cout << "Available Physical Memory: " << memStatus.ullAvailPhys / 1024 << " MB" << std::endl;
+
+    #elif __linux__
+    std::ifstream ifs("/proc/meminfo");
+    std::string line;
+
+    std::string memTotal, memFree, memAvailable;
+
+    while (std::getline(ifs, line)) {
+        std::size_t found = line.find("MemTotal:");
+        if (found != std::string::npos) {
+            memTotal = line.substr(found + 9);
+            memTotal.pop_back(); // remove the trailing " kB" suffix
+        }
+
+        found = line.find("MemFree:");
+        if (found != std::string::npos) {
+            memFree = line.substr(found + 8);
+            memFree.pop_back(); // remove the trailing " kB" suffix
+        }
+
+        found = line.find("MemAvailable:");
+        if (found != std::string::npos) {
+            memAvailable = line.substr(found + 13);
+            memAvailable.pop_back(); // remove the trailing " kB" suffix
+        }
+    }
+
+    std::cout << "Memory Information:" << std::endl;
+    std::cout << "-------------------" << std::endl;
+    std::cout << "Total Physical Memory: " << memTotal << " kB" << std::endl;
+    std::cout << "Available Physical Memory: " << memAvailable << " kB" << std::endl;
+
+    #endif
+}
+
+void dfCommand(const vector<string>& args) {
+    #ifdef _WIN32
+    ULONGLONG totalBytes, freeBytes, totalFreeBytes, totalBytesAvailable;
+    string path = "C:\\"; 
+
+    if (GetDiskFreeSpaceExA(path.c_str(), (PULARGE_INTEGER)&freeBytes, (PULARGE_INTEGER)&totalBytes, (PULARGE_INTEGER)&totalBytesAvailable)) {
+        double totalSpace = totalBytes / (1024.0 * 1024.0);
+        double availableSpace = totalBytesAvailable / (1024.0 * 1024.0);
+        double usedSpace = totalSpace - availableSpace;
+
+        cout << "Filesystem      1K-blocks      Used Available Use% Mounted on\n";
+        cout << path << "         " << totalSpace << "         " << usedSpace << "         " << availableSpace << "         " << (int)((usedSpace / totalSpace) * 100) << "%" << "         " << path << std::endl;
+    } else {
+        cerr << "Error: Unable to retrieve disk space information." << endl;
+    }
+
+    #elif __linux__
+    ifstream file("/proc/mounts");
+    string line, path, mountPoint, fsType, dummy;
+
+    cout << "Filesystem      1K-blocks      Used Available Use% Mounted on\n";
+
+    while (getline(file, line)) {
+        istringstream iss(line);
+        iss >> dummy >> path >> dummy >> dummy >> dummy >> mountPoint >> fsType >> dummy;
+
+        ifstream statFile("/proc/diskstats");
+        string statLine;
+        bool found = false;
+
+        while (getline(statFile, statLine)) {
+            istringstream statIss(statLine);
+            string statDummy, statPath;
+            statIss >> statDummy >> statPath >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy >> dummy;
+
+            if (statPath == path) {
+                found = true;
+                break;
+            }
+        }
+
+        statFile.close();
+
+        if (found) {
+            ifstream sysFile("/sys/block/" + path.substr(5) + "/size");
+            string sysLine;
+            getline(sysFile, sysLine);
+            int totalBlocks = stoi(sysLine) * 1024;
+
+            ifstream usedFile("/sys/block/" + path.substr(5) + "/used");
+            getline(usedFile, sysLine);
+            int usedBlocks = stoi(sysLine) * 1024;
+
+            int availableBlocks = totalBlocks - usedBlocks;
+            double usePercent = (double)usedBlocks / totalBlocks * 100;
+
+            cout << mountPoint << "         " << totalBlocks / 1024 << "         " << usedBlocks / 1024 << "         " << availableBlocks / 1024 << "         " << (int)usePercent << "%" << "         " << mountPoint << endl;
+        }
+    }
+
+    file.close();
+    #endif
+}
+
 void chmodCommand(const vector<string>& args) {
     string permissions = args[1];
     permissions.erase(0, permissions.find_first_not_of(" \t")); 
@@ -439,6 +546,29 @@ void uptimeCommand(const vector<string>& args) {
     printf("%02d:%02d:%02d ", (localtime(&now))->tm_hour, (localtime(&now))->tm_min, (localtime(&now))->tm_sec);
     
     cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << " " << "user" << "," <<endl;     
+}
+
+void uniqCommand(const vector<string>& args) {
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    ifstream file(source);
+    if (!file) {
+        cerr << "Error opening file!" << endl;
+    }
+    set<string> uniqueLines;
+    string line;
+    while (getline(file, line)) {
+        uniqueLines.insert(line);
+    }
+    if (uniqueLines.size() == 1) {
+        cout << "No unique lines found!" << endl;
+    } else {
+        for (const auto& line : uniqueLines) {
+            cout << line << endl;
+        }
+    }
+    file.close();
 }
 
 void addCommand(const string& command) {
@@ -497,6 +627,9 @@ int main() {
     commandRegister["wc"] = wcCommand;
     commandRegister["uname"] = unameCommand;
     commandRegister["uptime"] = uptimeCommand;
+    commandRegister["free"] = freeCommand;
+    commandRegister["df"] = dfCommand;
+    commandRegister["uniq"] = uniqCommand;
 
     cout << "Logging in as root" << endl;
     
