@@ -1,0 +1,515 @@
+#include<iostream>
+#include<string>
+#include<vector>
+#include<map>
+#include<functional>
+#include<io.h>
+#include<cstdlib>
+#include<dirent.h>
+#include<sys/stat.h>
+#include<fstream>
+#include<cstdlib>
+#include<ctime>
+#include<c++/3.4.5/bits/basic_string.h>
+#include<c++/3.4.5/bits/char_traits.h>
+#include<unistd.h>
+#include<string.h>
+#include<bitset>
+#include<unistd.h>
+#include<sys/types.h>
+#include<windows.h>
+#include<sstream>
+#include<signal.h>
+
+using namespace std;
+
+map<string, void (*)(const vector<string>&)> commandRegister; 
+string currentWorkingDirectory;
+string prevDir;
+vector<string> history;
+
+vector<string> tokenize(const string& input) {
+    vector<string> tokens;
+    string token;
+    for (char c : input) {
+        if (c == ' ') { 
+            if (!token.empty()) {
+                tokens.push_back(token);
+                token.clear(); 
+            }
+        }
+        token += c;
+    }
+    if (!token.empty()) {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+void whoamiCommand(const vector<string>& args) {
+    const char* username = getenv("USERNAME");
+    if (username) {
+        cout<<""<<username<<endl;
+    } else {
+        cout <<"Error: Unable to get name"<< endl;
+    }
+}
+
+void lsCommand() {
+    DIR *dir;
+    struct dirent *ent;
+    dir = opendir(".");
+    if (dir!= NULL) {
+        while ((ent = readdir(dir))!= NULL) {
+            cout << ent->d_name << endl;
+        }
+        closedir(dir);
+    } else {
+        cout << "Error: Unable to read directory" << endl;
+    }
+}
+
+void ls_l_command() {
+    DIR *dir;
+    struct dirent *ent;
+    dir = opendir(".");
+    if (dir != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            struct stat fileStat;
+            stat(ent->d_name, &fileStat);
+            if (S_ISDIR(fileStat.st_mode)) {
+                cout << "d";
+            } else {
+                cout << "-";
+            }
+            cout << ((fileStat.st_mode & 0400)? "r" : "-"); 
+            cout << ((fileStat.st_mode & 0200)? "w" : "-");         
+            cout << ((fileStat.st_mode & 0100)? "x" : "-"); 
+            cout << ((fileStat.st_mode & 0040)? "r" : "-"); 
+            cout << ((fileStat.st_mode & 0020)? "w" : "-"); 
+            cout << ((fileStat.st_mode & 0010)? "x" : "-"); 
+            cout << ((fileStat.st_mode & 0004)? "r" : "-"); 
+            cout << ((fileStat.st_mode & 0002)? "w" : "-"); 
+            cout << ((fileStat.st_mode & 0001)? "x" : "-"); 
+            cout << " " << fileStat.st_nlink;
+            cout << " " << fileStat.st_size;
+            cout << " " << ctime(&fileStat.st_mtime);
+            cout << " " << ent->d_name << endl;
+        }
+        closedir(dir);
+    }
+}
+
+void lsLCommand(const vector<string>& args) {
+    int numArgs=args.size();
+    if (numArgs==1) {
+        lsCommand();
+    }
+    else {
+        ls_l_command();
+    }
+}
+
+struct ProcessInfo {
+    string pid;
+    string user;
+    string cpu;
+    string mem;
+    string vsz;
+    string rss;
+    string tty;
+    string stat;
+    string start;
+    string time;
+    string cmd;
+};
+
+void psCommand(const vector<string>& args) {
+    #ifdef _WIN32
+    string command = "tasklist";
+    #else
+        string command = "ps aux";
+    #endif
+    system(command.c_str());
+}
+
+void cdCommand(const vector<string>& args) {
+    if (args.size() != 2) {
+        cout << "Error: cd command expects one argument" << endl;
+        return;
+    }
+    string dir = args[1];
+    dir.erase(0, dir.find_first_not_of(" \t")); 
+    dir.erase(dir.find_last_not_of(" \t") + 1); 
+
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        cout << "Current working directory: " << cwd << endl;
+        prevDir = cwd;
+    } else {
+        cout << "Error: Unable to get current working directory" << endl;
+    }
+    cout << "Trying to change directory to " << dir << endl;
+    if (chdir(dir.c_str()) == -1) {
+        cout << "Error: Unable to change directory" << endl;
+    } else {
+        cout << "Directory changed to " << dir << endl;
+    }
+}
+
+void cdbackCommand(const vector<string>& args) {
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd))!= NULL) {
+        cout << "Current working directory: " << cwd << endl;
+    } else {
+        cout << "Error: Unable to get current working directory" << endl;
+    }
+    if (!prevDir.empty()) {
+        if (chdir(prevDir.c_str()) == -1) {
+            cout << "Error: Unable to change directory" << endl;
+        } else {
+            cout << "Directory changed" << endl;
+            prevDir.clear(); 
+        }
+    } else {
+        cout << "Error: No previous directory to go back to" << endl;
+    }
+}
+
+void pwdCommand(const vector<string>& args) {
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        currentWorkingDirectory = cwd;
+        cout << currentWorkingDirectory << endl;
+    } else {
+        cout << "Error: Unable to get current working directory" << endl;
+    }
+}
+
+void mkdirCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: rmdir command expects one argument" << endl;
+        return;
+    }
+    string dir = args[1];
+    dir.erase(0, dir.find_first_not_of(" \t")); 
+    dir.erase(dir.find_last_not_of(" \t") + 1);
+    char cmd[256];
+    sprintf(cmd, "mkdir \"%s\"", dir.c_str());
+    system(cmd); 
+    cout << "Directory created successfully!" << endl;
+}
+
+void rmdirCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: rmdir command expects one argument" << endl;
+        return;
+    }
+    string dir = args[1];
+    dir.erase(0, dir.find_first_not_of(" \t")); 
+    dir.erase(dir.find_last_not_of(" \t") + 1);
+    char cmd[256];
+    sprintf(cmd, "del /q /s /f \"%s\\*\"", dir.c_str());
+    system(cmd);
+    sprintf(cmd, "rmdir /q /s \"%s\"", dir.c_str());
+    if (system(cmd) == 0) {
+        printf("Directory deleted successfully!\n");
+    } else {
+        printf("Error: Unable to delete directory\n");
+    }
+}
+
+void touchCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: touch command expects one argument" << endl;
+        return;
+    }
+    string dir = args[1];
+    dir.erase(0, dir.find_first_not_of(" \t")); 
+    dir.erase(dir.find_last_not_of(" \t") + 1); 
+    if (_access(dir.c_str(), 0) == 0) {
+        cout << "File already exists!" << endl;
+    }
+    else {
+        ofstream(args[1]).close();
+        cout<< "File created successfully!"<<endl;
+    }
+}
+
+void catCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: cat command expects one argument" << endl;
+        return;
+    }
+    string dir = args[1];
+    dir.erase(0, dir.find_first_not_of(" \t")); 
+    dir.erase(dir.find_last_not_of(" \t") + 1); 
+    ifstream file(dir);
+    if (!file) {
+        cout<< "Error: No such files exist!"<<endl;
+    }
+    else {
+        string line;
+        while (getline(file, line)) {
+            cout << line << endl;
+        }   
+    }
+}
+
+void echoCommand(const vector<string>& args) {
+    for (int i=1;i<args.size();i++) {
+        cout << args[i];
+        if (i < args.size() -1) {
+            cout << " ";
+        }
+    }
+    cout << endl;
+}
+
+void cpCommand(const vector<string>& args) {
+    if (args.size()!= 3) {
+        cout << "Error: cp command expects only two arguments" << endl;
+        return;
+    }
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    string destination = args[2];
+    destination.erase(0, destination.find_first_not_of(" \t")); 
+    destination.erase(destination.find_last_not_of(" \t") + 1);
+    ifstream sourceFileStream(source, ios::binary);
+    ofstream destinationFileStream(destination, ios::binary);
+
+    if (!sourceFileStream.is_open() || !destinationFileStream.is_open()) {
+        cout << "Error: unable to open file" << endl;
+    }
+
+    destinationFileStream << sourceFileStream.rdbuf();
+    sourceFileStream.close();
+    destinationFileStream.close();
+    cout << "File copied successfully!" << endl;
+}
+
+void dateCommand(const vector<string>& args){
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    char buffer[64];
+    strftime(buffer, sizeof(buffer), "%a %b %d %H:%M:%S %Z %Y", ltm);
+    cout << buffer << endl;
+}
+
+void diffCommand(const vector<string>& args) {
+    string file1=args[1];
+    string file2 = args[2];
+    string cmd = "fc" + file1 + " " + file2;
+    system(cmd.c_str());
+}
+
+void hexdumpCommand(const vector<string>& args) {
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    ifstream FileStream(source, ios::binary);
+    if (!FileStream) {
+        cerr << "Error opening file!" << endl;
+    }
+    char byte;
+    while (FileStream.get(byte)) {
+        bitset<8> b(byte); 
+        cout << hex << b.to_ulong() << " ";
+    }
+
+    cout << endl;
+    FileStream.close();
+}
+
+void wcCommand(const vector<string>& args){
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    ifstream FileStream(source, ios::binary);
+    if (!FileStream) {
+        cout << "Error opening file!" << endl;
+    }
+    int lines = 0;
+    int words = 0;
+    int chars = 0;
+    string line;
+    while (getline(FileStream, line)) {
+        ++lines;
+        chars += line.size(); 
+
+        size_t wordStart = 0;
+        while (wordStart < line.size()) {
+            while (wordStart < line.size() && isspace(line[wordStart])) {
+                ++wordStart;
+            }
+            if (wordStart < line.size()) {
+                ++words;
+                while (wordStart < line.size() && !isspace(line[wordStart])) {
+                    ++wordStart;
+                }
+            }
+        }
+    }
+    FileStream.close();
+    cout << " " << lines << " " << words << " " << chars << " " << "number" << endl;
+}
+
+void unameCommand(const vector<string>& args) {
+    string osName;
+
+#ifdef _WIN32
+    osName = "Windows";
+#elif __APPLE__
+    osName = "macOS";
+#elif __linux__
+    osName = "Linux";
+#else
+    osName = "Unknown";
+#endif
+
+    cout << osName << endl;
+
+}
+
+void vimCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: vim command expects only one argument" << endl;
+    }
+    string fileName = args[1];
+    string command = "vim" + fileName;
+    system(command.c_str());
+}
+
+void rmCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: rm command expects only one arguments" << endl;
+        return;
+    }
+    string file = args[1];
+    file.erase(0, file.find_first_not_of(" \t")); 
+    file.erase(file.find_last_not_of(" \t") + 1);
+    char cmd[256];
+    sprintf(cmd, "del /q /f \"%s\"", file.c_str());
+
+    if (system(cmd) == 0) {
+        cout << "File deleted successfully!" << endl;
+    } else {
+        cout << "Error: Unable to delete file." << endl;
+    }
+}
+
+void gzipCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: gzip command expects only one argument" << endl;
+        return;
+    }
+    string file = args[1];
+    file.erase(0, file.find_first_not_of(" \t")); 
+    file.erase(file.find_last_not_of(" \t") + 1);
+    string cmd = "gzip " + file;
+    system(cmd.c_str());
+}
+
+void chmodCommand(const vector<string>& args) {
+    string permissions = args[1];
+    permissions.erase(0, permissions.find_first_not_of(" \t")); 
+    permissions.erase(permissions.find_last_not_of(" \t") + 1);
+    int numPer = stoi(permissions);
+    string file = args[2];
+    if (chmod(file.c_str(), numPer) == -1) {
+        cout << "Error changing permissions: " << endl;
+        return;
+    }
+    cout << "Permissions changed successfully!" << endl;
+
+}
+#include <stdlib.h>
+clock_t start = clock();
+
+void uptimeCommand(const vector<string>& args) {
+    time_t now;
+    time(&now);
+    clock_t end = clock();
+    double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
+    int elapsed_minutes = static_cast<int>(elapsed / 60);
+    int elapsed_hours = static_cast<int>(elapsed_minutes / 60);
+    elapsed_minutes %= 60;
+    printf("%02d:%02d:%02d ", (localtime(&now))->tm_hour, (localtime(&now))->tm_min, (localtime(&now))->tm_sec);
+    
+    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << " " << "user" << "," <<endl;     
+}
+
+void addCommand(const string& command) {
+    history.push_back(command);
+}
+
+void displayHistory(const vector<string>& args) {
+    int count = 1;
+    for (const auto& command : history) {
+        cout << "  " << count << "  " << command << endl;
+        count++;
+    }
+}
+
+void exitCommand(const vector<string>& args) {
+    cout<< "Logging out from .nyan" <<endl;
+    exit(1);
+}
+
+void clsCommand(const vector<string>& args) {
+    cout << "\x1B[2J\x1B[H";
+}
+
+int main() {
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        currentWorkingDirectory = cwd;
+    } else {
+        cout << "Error: Unable to get current working directory" << endl;
+        return 1;
+    }
+    commandRegister["pwd"] = pwdCommand;
+    commandRegister["whoami"] = whoamiCommand;
+    commandRegister["ls"] = lsLCommand;
+    commandRegister["ls -l"] = lsLCommand;
+    commandRegister["cd"] = cdCommand;
+    commandRegister["mkdir"] = mkdirCommand;
+    commandRegister["rmdir"] = rmdirCommand;
+    commandRegister["touch"] = touchCommand;
+    commandRegister["exit"] = exitCommand;
+    commandRegister["cat"] = catCommand;
+    commandRegister["echo"] = echoCommand;
+    commandRegister["cp"] = cpCommand;
+    commandRegister["date"] = dateCommand;
+    commandRegister["diff"] = diffCommand;
+    commandRegister["vim"] = vimCommand;
+    commandRegister["rm"] = rmCommand;
+    commandRegister["cls"] = clsCommand;
+    commandRegister["clear"] = clsCommand;
+    commandRegister["gzip"] = gzipCommand;
+    commandRegister["cd .."] = cdbackCommand;
+    commandRegister["history"] = displayHistory;
+    commandRegister["chmod"] = chmodCommand;
+    commandRegister["hexdump"] = hexdumpCommand;
+    commandRegister["ps"] = psCommand;
+    commandRegister["wc"] = wcCommand;
+    commandRegister["uname"] = unameCommand;
+    commandRegister["uptime"] = uptimeCommand;
+
+    cout << "Logging in as root" << endl;
+    
+    string input;
+    while (true) {
+        cout << ".nyan:~$ ";
+        getline(cin, input);
+        addCommand(input);
+
+        vector<string> tokens = tokenize(input);
+        if (commandRegister.find(tokens[0]) != commandRegister.end()) {
+                commandRegister[tokens[0]](tokens);
+        } 
+    }
+    return 0;
+}
