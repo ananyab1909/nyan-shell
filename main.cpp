@@ -568,7 +568,8 @@ void chmodCommand(const vector<string>& args) {
 
 }
 
-void uptimeCommand(const vector<string>& args) {   
+void uptimeCommand(const vector<string>& args) {
+    
     #ifdef _WIN32
     cout << "Not supported in Windows" << endl; 
     #elif __linux__
@@ -635,6 +636,7 @@ void clsCommand(const vector<string>& args) {
 void loginAsRoot() {
     loggedInUsers["root"] = true;
     cout << "Logged in as root" << endl;
+    loginOrder.push_back("root");
 }
 
 void addRoot() {
@@ -706,133 +708,50 @@ void usersCommand(const vector<string>& arg) {
     }
 } 
 
+void manCommand(const vector<string>& args) {
+    static const map<string, string> commandHelp = {
+        {"pwd", "NAME  pwd - print name of current/working directory\nSYNTAX  pwd"},
+        {"whoami", "NAME  who - show who is logged on\nSYNTAX  whoami"},
+        {"ls", "NAME ls - list directory contents\nSYNTAX  ls"},
+        {"ls -l", "NAME   ls -l - use a long listing format\nSYNTAX  ls -l"},
+        {"cd", "NAME  cd - enter into a directory\nSYNTAX  cd"},
+        {"mkdir", "NAME  mkdir - make new directories\nSYNTAX  mkdir [filename]"},
+        {"rmdir", "NAME  rmdir - deletes empty as well non empty directories\nSYNTAX  rmdir [filename]"},
+        {"touch", "NAME  touch - creates empty files\nSYNTAX  touch [filename]"},
+        {"exit", "NAME  exit - exits the shell\nSYNTAX  exit"},
+        {"cat", "NAME  cat - concatenate files and print on the standard output\nSYNTAX  cat [filename]"},
+        {"echo", "NAME  echo - display a line of text\nSYNTAX  echo [text]"},
+        {"cp", "NAME  cp - copy files and directories\nSYNTAX  cp [sourcefile] [destinationfile]"},
+        {"date", "NAME  date - print or set the system date and time\nSYNTAX  date"},
+        {"diff", "NAME  diff - compare files line by line\nSYNTAX  diff [filename]"},
+        {"rm", "NAME  rm - remove files\nSYNTAX  rm [filename]"},
+        {"cls", "NAME  cls - clears screen\nSYNTAX  cls"},
+        {"clear", "NAME  clear - clears screen\nSYNTAX  clear"},
+        {"gzip", "NAME  gzip - compress or expand files\nSYNTAX  gzip [filename]"},
+        {"history", "NAME  history - GNU History Library\nSYNTAX  history"},
+        {"chmod", "NAME  chmod - change file mode bits\nSYNTAX chmod [permission octal digits] [filename]"},
+        {"hexdump", "NAME  hexdump - display file contents in octal\nSYNTAX  hexdump [filename]"},
+        {"ps", "NAME  ps - report a snapshot of the current processes\nSYNTAX  ps"},
+        {"wc", "NAME  wc - print newline, word, and byte counts for each file\nSYNTAX  wc [filename]"},
+        {"uname", "NAME  uname - print system information\nSYNTAX  uname"},
+        {"uptime", "NAME  uptime - Tell how long the system has been running\nSYNTAX  uptime"},
+        {"free", "NAME  free - Display amount of free and used memory in the system\nSYNTAX  free"},
+        {"df", "NAME  df - report file system disk space usage\nSYNTAX  df"},
+        {"uniq", "NAME  uniq - report or omit repeated lines\nSYNTAX  uniq [filename]"},
+        {"man", "NAME  man - an interface to the system reference manuals\nSYNTAX  man"}
+    };
 
-// void manCommand(const vector<string>& args) {
-//     string cmd = args[1];
-//     string nextcmd=args[2];
-//     cmd.erase(0, cmd.find_first_not_of(" \t")); 
-//     cmd.erase(cmd.find_last_not_of(" \t") + 1); 
-//     nextcmd.erase(0, nextcmd.find_first_not_of(" \t")); 
-//     nextcmd.erase(nextcmd.find_last_not_of(" \t") + 1); 
-//     if (cmd == "pwd") {
-//         cout << "NAME  pwd - print name of current/working directory" << endl;
-//         cout<< "SYNTAX  pwd" << endl;
-//     }
-//     else if (cmd == "whoami") {
-//         cout<< "NAME  who - show who is logged on" << endl;
-//         cout<< "SYNTAX  whoami" <<endl;
-//     }
-//     else if (cmd == "ls") {
-//         if (nextcmd == "-l") {
-//             cout << "NAME   ls -l - use a long listing format"  << endl;
-//             cout << "SYNTAX  ls -l" << endl;
-//         }
-//         else {
-//             cout << "NAME ls - list directory contents"  << endl;
-//             cout << "SYNTAX  ls" << endl;  
-//         }
-//     }
-//     else if (cmd == "cd") {
-//         cout << "NAME  cd - enter into a directory" << endl;
-//         cout << "SYNTAX  cd"  << endl;
-//     }
-//     else if (cmd == "mkdir") {
-//         cout << "NAME  mkdir - make new directories" << endl;
-//         cout << "SYNTAX  mkdir [filename]" << endl;
-//     }
-//     else if (cmd == "rmdir") {
-//         cout << "NAME  rmdir - deletes empty as well non empty directories" << endl;
-//         cout << "SYNTAX  rmdir [filename]" << endl;
-//     }
-//     else if (cmd == "touch") {
-//         cout << "NAME  touch - creates empty files" << endl;
-//         cout << "SYNTAX  touch [filename]" << endl;
-//     }
-//     else if (cmd == "exit") {
-//         cout << "NAME  exit - exits the shell"  << endl;
-//         cout << "SYNTAX  exit"  << endl;
-//     }
-//     else if (cmd == "cat") {
-//         cout << "NAME  cat - concatenate files and print on the standard output" << endl;
-//         cout << "SYNTAX  cat [filename]" << endl;
-//     }
-//     else if (cmd == "echo") {
-//         cout << "NAME  echo - display a line of text" << endl;
-//         cout << "SYNTAX  echo [text]" << endl;
-//     }
-//     else if (cmd == "cp") {
-//         cout << "NAME  cp - copy files and directories" << endl;
-//         cout << "SYNTAX  cp [sourcefile] [destinationfile]" << endl;
-//     }
-//     else if (cmd == "date") {
-//         cout << "NAME  date - print or set the system date and time" << endl;
-//         cout << "SYNTAX  date" << endl;
-//     }
-//     else if (cmd == "diff") {
-//         cout << "NAME  diff - compare files line by line" << endl;
-//         cout << "SYNTAX  diff [filename]";
-//     }
-//     else if (cmd == "rm") {
-//         cout << "NAME  rm - remove files" << endl;
-//         cout << "SYNTAX  rm [filename]" << endl;
-//     }
-//     else if (cmd == "cls") {
-//         cout << "NAME  cls - clears screen" << endl;
-//         cout << "SYNTAX  cls" << endl;
-//     }
-//     else if (cmd == "clear") {
-//         cout << "NAME  clear - clears screen" << endl;
-//         cout << "SYNTAX  clear" << endl;
-//     }
-//     else if (cmd == "gzip") {
-//         cout << "NAME  gzip - compress or expand files"  << endl;
-//         cout << "SYNTAX  gzip [filename]" << endl;
-//     }
-//     else if (cmd == "history") {
-//         cout << "NAME  history - GNU History Library" << endl;
-//         cout << "SYNTAX  history" << endl;
-//     }
-//     else if (cmd == "chmod") {
-//         cout << "NAME  chmod - change file mode bits" << endl;
-//         cout << "SYNTAX chmod [permission octal digits] [filename]" << endl;
-//     }
-//     else if (cmd == "hexdump") {
-//         cout << "NAME  hexdump - display file contents in octal" << endl;
-//         cout << "SYNTAX  hexdump [filename]" <<endl;
-//     }
-//     else if (cmd == "ps") {
-//         cout << "NAME  ps - report a snapshot of the current processes" << endl;
-//         cout << "SYNTAX  ps" <<endl;
-//     }
-//     else if (cmd == "wc") {
-//         cout << "NAME  wc - print newline, word, and byte counts for each file" << endl;
-//         cout << "SYNTAX  wc [filename]" << endl;
-//     }
-//     else if (cmd == "uname") {
-//         cout << "NAME  uname - print system information" << endl;
-//         cout << "SYNTAX  uname" <<endl;
-//     }
-//     else if (cmd == "uptime") {
-//         cout << "NAME  uptime - Tell how long the system has been running" << endl;
-//         cout << "SYNTAX  uptime" << endl;
-//     }
-//     else if (cmd == "free") {
-//         cout << "NAME  free - Display amount of free and used memory in the system" << endl;
-//         cout << "SYNTAX  free" <<endl;
-//     }
-//     else if (cmd == "df") {
-//         cout << "NAME  df - report file system disk space usage" << endl;
-//         cout << "SYNTAX  df" <<endl;
-//     }
-//     else if (cmd == "uniq") {
-//         cout << "NAME  uniq - report or omit repeated lines" << endl;
-//         cout << "SYNTAX  uniq [filename]" << endl;
-//     }
-//     else if (cmd == "man") {
-//         cout << "NAME  man - an interface to the system reference manuals" << endl;
-//         cout << "SYNTAX  man" << endl;
-//     }
-// }
+    string cmd = args[1];
+    cmd.erase(0, cmd.find_first_not_of(" \t"));
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+
+    auto it = commandHelp.find(cmd);
+    if (it != commandHelp.end()) {
+        cout << it->second << endl;
+    } else {
+        cout << "Error: unknown command" << endl;
+    }
+}
 
 int main() {
     char cwd[1024];
@@ -875,7 +794,7 @@ int main() {
     commandRegister["free"] = freeCommand;
     commandRegister["df"] = dfCommand;
     commandRegister["uniq"] = uniqCommand;
-    // commandRegister["man"] = manCommand;
+    commandRegister["man"] = manCommand;
     commandRegister["wget"] = wgetCommand;
     commandRegister["mv"] = mvCommand;
 
