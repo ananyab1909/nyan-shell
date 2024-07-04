@@ -17,6 +17,8 @@
 #include<sstream>
 #include<signal.h>
 #include<set>
+#include<limits>
+#include<list>
 #ifdef _WIN32
 #include<windows.h>
 #endif
@@ -27,6 +29,11 @@ map<string, void (*)(const vector<string>&)> commandRegister;
 string currentWorkingDirectory;
 string prevDir;
 vector<string> history;
+map<string, bool> loggedInUsers;
+string currentUser;
+list<string> loginOrder;
+vector<string> allUsers;
+
 
 vector<string> tokenize(const string& input) {
     vector<string> tokens;
@@ -44,15 +51,6 @@ vector<string> tokenize(const string& input) {
         tokens.push_back(token);
     }
     return tokens;
-}
-
-void whoamiCommand(const vector<string>& args) {
-    const char* username = getenv("USERNAME");
-    if (username) {
-        cout<<""<<username<<endl;
-    } else {
-        cout <<"Error: Unable to get name"<< endl;
-    }
 }
 
 void lsCommand() {
@@ -109,20 +107,6 @@ void lsLCommand(const vector<string>& args) {
         ls_l_command();
     }
 }
-
-struct ProcessInfo {
-    string pid;
-    string user;
-    string cpu;
-    string mem;
-    string vsz;
-    string rss;
-    string tty;
-    string stat;
-    string start;
-    string time;
-    string cmd;
-};
 
 void psCommand(const vector<string>& args) {
     #ifdef _WIN32
@@ -188,14 +172,14 @@ void pwdCommand(const vector<string>& args) {
 
 void mkdirCommand(const vector<string>& args) {
     if (args.size()!= 2) {
-        cout << "Error: rmdir command expects one argument" << endl;
+        cout << "Error: mkdir command expects one argument" << endl;
         return;
     }
     string dir = args[1];
     dir.erase(0, dir.find_first_not_of(" \t")); 
     dir.erase(dir.find_last_not_of(" \t") + 1);
     char cmd[256];
-    sprintf(cmd, "mkdir \"%s\"", dir.c_str());
+    sprintf(cmd, "mkdir %s", dir.c_str());
     system(cmd); 
     cout << "Directory created successfully!" << endl;
 }
@@ -221,9 +205,9 @@ void rmdirCommand(const vector<string>& args) {
     #elif __linux__
     string cmd = "rm -rf " + dir;
     if (system(cmd.c_str()) == 0) {
-        cout << "Directory deleted successfully!" << endl;
+        cout << "File deleted successfully!" << endl;
     } else {
-        cout << "Error: Unable to delete directory" << endl;
+        cout << "Error: Unable to delete file" << endl;
     }
     #endif
 }
@@ -241,8 +225,8 @@ void touchCommand(const vector<string>& args) {
         cout << "File already exists!" << endl;
     }
     else {
-        ofstream(args[1]).close();
-        cout<< "File created successfully!"<<endl;
+        ofstream(dir).close(); 
+        cout << "File created successfully!" << endl;
     }
     #elif __linux__
     string file = args[1];
@@ -445,10 +429,12 @@ void gzipCommand(const vector<string>& args) {
     file.erase(0, file.find_first_not_of(" \t")); 
     file.erase(file.find_last_not_of(" \t") + 1);
     #ifdef _WIN32
-    cout << "Windows doesnt support this!" << endl;
+    cout << "gzip not supported in Windows" << endl;
     #elif __linux__
-    string cmd = "gzip " + file;
-    system(cmd.c_str());
+    string outputFile = file + ".gz";
+    string command = "gzip -c " + file + " > " + outputFile;
+    system(command.c_str());
+    cout << "File created sucsessfully!" << endl;
     #endif
 }
 
@@ -518,30 +504,6 @@ void dfCommand(const vector<string>& args) {
     #endif
 }
 
-void chmodCommand(const vector<string>& args) {
-    string permissions = args[1];
-    permissions.erase(0, permissions.find_first_not_of(" \t")); 
-    permissions.erase(permissions.find_last_not_of(" \t") + 1);
-    int numPer = stoi(permissions);
-    string file = args[2];
-    if (chmod(file.c_str(), numPer) == -1) {
-        cout << "Error changing permissions: " << endl;
-        return;
-    }
-    cout << "Permissions changed successfully!" << endl;
-
-}
-
-
-void uptimeCommand(const vector<string>& args) {
-    
-    #ifdef _WIN32
-    cout << "uptime is not supported by Windows" << endl;
-    #elif __linux__
-    system("uptime");
-    #endif     
-}
-
 string basename(const string& path) {
     size_t pos = path.find_last_of('/');
     if (pos!= string::npos) {
@@ -592,6 +554,49 @@ void mvCommand(const vector<string>& args) {
     
 }
 
+void chmodCommand(const vector<string>& args) {
+    string permissions = args[1];
+    permissions.erase(0, permissions.find_first_not_of(" \t")); 
+    permissions.erase(permissions.find_last_not_of(" \t") + 1);
+    int numPer = stoi(permissions);
+    string file = args[2];
+    if (chmod(file.c_str(), numPer) == -1) {
+        cout << "Error changing permissions: " << endl;
+        return;
+    }
+    cout << "Permissions changed successfully!" << endl;
+
+}
+#include <stdlib.h>
+clock_t start = clock();
+
+void uptimeCommand(const vector<string>& args) {
+    time_t now;
+    #ifdef _WIN32
+    time(&now);
+    clock_t end = clock();
+    double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
+    int elapsed_minutes = static_cast<int>(elapsed / 60);
+    int elapsed_hours = static_cast<int>(elapsed_minutes / 60);
+    elapsed_minutes %= 60;
+    printf("%02d:%02d:%02d ", (localtime(&now))->tm_hour, (localtime(&now))->tm_min, (localtime(&now))->tm_sec);
+    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << " " << "user" << "," <<endl;   
+    #elif __linux__
+    system("uptime");
+    #endif  
+}
+
+void wgetCommand(const vector<string>& args) {
+    #ifdef _WIN32
+    cout << "Windows doesnt support it" << endl;
+    #elif __linux__
+    string url = args[1];
+    string cmd = "wget " + url;
+    system(cmd.c_str());
+    cout << "File downloaded and stored successfully!" << endl;
+    #endif
+}
+
 void uniqCommand(const vector<string>& args) {
     string source = args[1];
     source.erase(0, source.find_first_not_of(" \t")); 
@@ -615,17 +620,6 @@ void uniqCommand(const vector<string>& args) {
     file.close();
 }
 
-void wgetCommand(const vector<string>& args) {
-    #ifdef _WIN32
-    cout << "Windows doesnt support it" << endl;
-    #elif __linux__
-    string url = args[1];
-    string cmd = "wget " + url;
-    system(cmd.c_str());
-    cout << "File downloaded and stored successfully!" << endl;
-    #endif
-}
-
 void addCommand(const string& command) {
     history.push_back(command);
 }
@@ -647,6 +641,209 @@ void clsCommand(const vector<string>& args) {
     cout << "\x1B[2J\x1B[H";
 }
 
+
+void loginAsRoot() {
+    loggedInUsers["root"] = true;
+    cout << "Logged in as root" << endl;
+}
+
+void addRoot() {
+    allUsers.push_back("root");
+}
+
+void getCurrentUser() {
+    cout << "You are logged in as " << loginOrder.back() << endl;
+}
+
+void loginUser(const string& username) {
+    if (loggedInUsers.find(username) != loggedInUsers.end()) {
+        cout << "User already logged in." << endl;
+        return;
+    }
+    loggedInUsers[username] = true;
+    currentUser = username;
+    cout << "Logged in as " << username << endl;
+}
+
+void loginCommand(const vector<string>& args) {
+    cout << "Enter username: ";
+    string username;
+    cin >> username;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    loginUser(username);
+    loginOrder.push_back(username);
+    allUsers.push_back(username);
+}
+
+void logoutCommand(const vector<string>& args) {
+    if (loggedInUsers.size() == 1) {
+        cout << "Root user cannot be logged out" << endl;
+        return;
+    }
+    string lastUser;
+    for (const auto& pair : loggedInUsers) {
+        if (pair.first != "root") {
+            lastUser = pair.first;
+        }
+    }
+    loggedInUsers.erase(lastUser);
+    loginOrder.remove(lastUser);
+    cout << "Log out successful" << endl;
+}
+
+void whoamiCommand(const vector<string>& args) {
+    getCurrentUser();
+}
+
+void activeCommand(const vector<string>& args) {
+    cout << "Logged in users:" << endl;
+    for (const auto& user : loggedInUsers) {
+        if (user.first == "root")  {
+            cout << user.first << endl;
+        }
+    }
+    for (const auto& user : loggedInUsers) {
+    if (user.first != "root") {
+        cout << user.first << endl;
+    }
+}
+}
+
+void usersCommand(const vector<string>& arg) {
+    cout << "All users:" << endl;
+    for (const auto& user : allUsers) {
+        cout << user << endl;
+    }
+} 
+
+
+// void manCommand(const vector<string>& args) {
+//     string cmd = args[1];
+//     string nextcmd=args[2];
+//     cmd.erase(0, cmd.find_first_not_of(" \t")); 
+//     cmd.erase(cmd.find_last_not_of(" \t") + 1); 
+//     nextcmd.erase(0, nextcmd.find_first_not_of(" \t")); 
+//     nextcmd.erase(nextcmd.find_last_not_of(" \t") + 1); 
+//     if (cmd == "pwd") {
+//         cout << "NAME  pwd - print name of current/working directory" << endl;
+//         cout<< "SYNTAX  pwd" << endl;
+//     }
+//     else if (cmd == "whoami") {
+//         cout<< "NAME  who - show who is logged on" << endl;
+//         cout<< "SYNTAX  whoami" <<endl;
+//     }
+//     else if (cmd == "ls") {
+//         if (nextcmd == "-l") {
+//             cout << "NAME   ls -l - use a long listing format"  << endl;
+//             cout << "SYNTAX  ls -l" << endl;
+//         }
+//         else {
+//             cout << "NAME ls - list directory contents"  << endl;
+//             cout << "SYNTAX  ls" << endl;  
+//         }
+//     }
+//     else if (cmd == "cd") {
+//         cout << "NAME  cd - enter into a directory" << endl;
+//         cout << "SYNTAX  cd"  << endl;
+//     }
+//     else if (cmd == "mkdir") {
+//         cout << "NAME  mkdir - make new directories" << endl;
+//         cout << "SYNTAX  mkdir [filename]" << endl;
+//     }
+//     else if (cmd == "rmdir") {
+//         cout << "NAME  rmdir - deletes empty as well non empty directories" << endl;
+//         cout << "SYNTAX  rmdir [filename]" << endl;
+//     }
+//     else if (cmd == "touch") {
+//         cout << "NAME  touch - creates empty files" << endl;
+//         cout << "SYNTAX  touch [filename]" << endl;
+//     }
+//     else if (cmd == "exit") {
+//         cout << "NAME  exit - exits the shell"  << endl;
+//         cout << "SYNTAX  exit"  << endl;
+//     }
+//     else if (cmd == "cat") {
+//         cout << "NAME  cat - concatenate files and print on the standard output" << endl;
+//         cout << "SYNTAX  cat [filename]" << endl;
+//     }
+//     else if (cmd == "echo") {
+//         cout << "NAME  echo - display a line of text" << endl;
+//         cout << "SYNTAX  echo [text]" << endl;
+//     }
+//     else if (cmd == "cp") {
+//         cout << "NAME  cp - copy files and directories" << endl;
+//         cout << "SYNTAX  cp [sourcefile] [destinationfile]" << endl;
+//     }
+//     else if (cmd == "date") {
+//         cout << "NAME  date - print or set the system date and time" << endl;
+//         cout << "SYNTAX  date" << endl;
+//     }
+//     else if (cmd == "diff") {
+//         cout << "NAME  diff - compare files line by line" << endl;
+//         cout << "SYNTAX  diff [filename]";
+//     }
+//     else if (cmd == "rm") {
+//         cout << "NAME  rm - remove files" << endl;
+//         cout << "SYNTAX  rm [filename]" << endl;
+//     }
+//     else if (cmd == "cls") {
+//         cout << "NAME  cls - clears screen" << endl;
+//         cout << "SYNTAX  cls" << endl;
+//     }
+//     else if (cmd == "clear") {
+//         cout << "NAME  clear - clears screen" << endl;
+//         cout << "SYNTAX  clear" << endl;
+//     }
+//     else if (cmd == "gzip") {
+//         cout << "NAME  gzip - compress or expand files"  << endl;
+//         cout << "SYNTAX  gzip [filename]" << endl;
+//     }
+//     else if (cmd == "history") {
+//         cout << "NAME  history - GNU History Library" << endl;
+//         cout << "SYNTAX  history" << endl;
+//     }
+//     else if (cmd == "chmod") {
+//         cout << "NAME  chmod - change file mode bits" << endl;
+//         cout << "SYNTAX chmod [permission octal digits] [filename]" << endl;
+//     }
+//     else if (cmd == "hexdump") {
+//         cout << "NAME  hexdump - display file contents in octal" << endl;
+//         cout << "SYNTAX  hexdump [filename]" <<endl;
+//     }
+//     else if (cmd == "ps") {
+//         cout << "NAME  ps - report a snapshot of the current processes" << endl;
+//         cout << "SYNTAX  ps" <<endl;
+//     }
+//     else if (cmd == "wc") {
+//         cout << "NAME  wc - print newline, word, and byte counts for each file" << endl;
+//         cout << "SYNTAX  wc [filename]" << endl;
+//     }
+//     else if (cmd == "uname") {
+//         cout << "NAME  uname - print system information" << endl;
+//         cout << "SYNTAX  uname" <<endl;
+//     }
+//     else if (cmd == "uptime") {
+//         cout << "NAME  uptime - Tell how long the system has been running" << endl;
+//         cout << "SYNTAX  uptime" << endl;
+//     }
+//     else if (cmd == "free") {
+//         cout << "NAME  free - Display amount of free and used memory in the system" << endl;
+//         cout << "SYNTAX  free" <<endl;
+//     }
+//     else if (cmd == "df") {
+//         cout << "NAME  df - report file system disk space usage" << endl;
+//         cout << "SYNTAX  df" <<endl;
+//     }
+//     else if (cmd == "uniq") {
+//         cout << "NAME  uniq - report or omit repeated lines" << endl;
+//         cout << "SYNTAX  uniq [filename]" << endl;
+//     }
+//     else if (cmd == "man") {
+//         cout << "NAME  man - an interface to the system reference manuals" << endl;
+//         cout << "SYNTAX  man" << endl;
+//     }
+// }
+
 int main() {
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -657,6 +854,9 @@ int main() {
     }
     commandRegister["pwd"] = pwdCommand;
     commandRegister["whoami"] = whoamiCommand;
+    commandRegister["active"] = activeCommand;
+    commandRegister["logout"] = logoutCommand;
+    commandRegister["users"] = usersCommand;
     commandRegister["ls"] = lsLCommand;
     commandRegister["ls -l"] = lsLCommand;
     commandRegister["cd"] = cdCommand;
@@ -685,10 +885,14 @@ int main() {
     commandRegister["free"] = freeCommand;
     commandRegister["df"] = dfCommand;
     commandRegister["uniq"] = uniqCommand;
+    // commandRegister["man"] = manCommand;
     commandRegister["wget"] = wgetCommand;
     commandRegister["mv"] = mvCommand;
 
-    cout << "Logging in as root" << endl;
+    loginAsRoot();
+    addRoot();
+
+    cout << endl;
     
     string input;
     while (true) {
@@ -697,6 +901,10 @@ int main() {
         addCommand(input);
 
         vector<string> tokens = tokenize(input);
+        if (tokens[0] == "login") {
+            loginCommand(tokens);
+        }
+
         if (commandRegister.find(tokens[0]) != commandRegister.end()) {
                 commandRegister[tokens[0]](tokens);
         } 
