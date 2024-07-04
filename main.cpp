@@ -567,20 +567,10 @@ void chmodCommand(const vector<string>& args) {
     cout << "Permissions changed successfully!" << endl;
 
 }
-#include <stdlib.h>
-clock_t start = clock();
 
-void uptimeCommand(const vector<string>& args) {
-    time_t now;
+void uptimeCommand(const vector<string>& args) {   
     #ifdef _WIN32
-    time(&now);
-    clock_t end = clock();
-    double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
-    int elapsed_minutes = static_cast<int>(elapsed / 60);
-    int elapsed_hours = static_cast<int>(elapsed_minutes / 60);
-    elapsed_minutes %= 60;
-    printf("%02d:%02d:%02d ", (localtime(&now))->tm_hour, (localtime(&now))->tm_min, (localtime(&now))->tm_sec);
-    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << " " << "user" << "," <<endl;   
+    cout << "Not supported in Windows" << endl; 
     #elif __linux__
     system("uptime");
     #endif  
