@@ -221,9 +221,9 @@ void rmdirCommand(const vector<string>& args) {
     #elif __linux__
     string cmd = "rm -rf " + dir;
     if (system(cmd.c_str()) == 0) {
-        cout << "File deleted successfully!" << endl;
+        cout << "Directory deleted successfully!" << endl;
     } else {
-        cout << "Error: Unable to delete file" << endl;
+        cout << "Error: Unable to delete directory" << endl;
     }
     #endif
 }
@@ -444,8 +444,12 @@ void gzipCommand(const vector<string>& args) {
     string file = args[1];
     file.erase(0, file.find_first_not_of(" \t")); 
     file.erase(file.find_last_not_of(" \t") + 1);
+    #ifdef _WIN32
+    cout << "Windows doesnt support this!" << endl;
+    #elif __linux__
     string cmd = "gzip " + file;
     system(cmd.c_str());
+    #endif
 }
 
 void freeCommand(const vector<string>& args) {
@@ -527,23 +531,65 @@ void chmodCommand(const vector<string>& args) {
     cout << "Permissions changed successfully!" << endl;
 
 }
-#include <stdlib.h>
-clock_t start = clock();
+
 
 void uptimeCommand(const vector<string>& args) {
-    time_t now;
+    
     #ifdef _WIN32
-    time(&now);
-    clock_t end = clock();
-    double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
-    int elapsed_minutes = static_cast<int>(elapsed / 60);
-    int elapsed_hours = static_cast<int>(elapsed_minutes / 60);
-    elapsed_minutes %= 60;
-    printf("%02d:%02d:%02d ", (localtime(&now))->tm_hour, (localtime(&now))->tm_min, (localtime(&now))->tm_sec);
-    cout << "up " << elapsed_hours << ":" << elapsed_minutes << ","  << "1" << "user" <<endl;
+    cout << "uptime is not supported by Windows" << endl;
     #elif __linux__
     system("uptime");
     #endif     
+}
+
+string basename(const string& path) {
+    size_t pos = path.find_last_of('/');
+    if (pos!= string::npos) {
+        return path.substr(pos + 1);
+    }
+    return path;
+}
+
+void mvCommand(const vector<string>& args) {
+    struct stat st;
+    bool isMove = true; 
+    string source = args[1];
+    cout << "Source: [" << source << "]" << endl;
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+
+    string destination = args[2];
+    cout << "Destination: [" << destination << "]" << endl;
+    destination.erase(0, destination.find_first_not_of(" \t")); 
+    destination.erase(destination.find_last_not_of(" \t") + 1); 
+    if (stat(destination.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+        cout << "Destination is a directory" << endl;
+        string destFile = destination + "/" + source.substr(source.find_last_of('/') + 1);
+        cout << "Destination file: [" << destFile << "]" << endl;
+        if (isMove) {
+            cout << "Moving file" << endl;
+        } else {
+            cout << "Renaming file" << endl;
+        }
+        if (rename(source.c_str(), destFile.c_str()) == 0) {
+            cout << "File " << (isMove? "moved" : "renamed") << " successfully!" << endl;
+        } else {
+            cout << "Error: Unable to " << (isMove? "move" : "rename") << " file." << endl;
+        }
+    } else {
+        cout << "Destination is not a directory" << endl;
+        if (isMove) {
+            cout << "Renaming file" << endl;
+        } else {
+            cout << "Renaming file" << endl;
+        }
+        if (rename(source.c_str(), destination.c_str()) == 0) {
+            cout << "File " << (isMove? "moved" : "renamed") << " successfully!" << endl;
+        } else {
+            cout << "Error: Unable to " << (isMove? "move" : "rename") << " file." << endl;
+        }
+    }
+    
 }
 
 void uniqCommand(const vector<string>& args) {
@@ -640,6 +686,7 @@ int main() {
     commandRegister["df"] = dfCommand;
     commandRegister["uniq"] = uniqCommand;
     commandRegister["wget"] = wgetCommand;
+    commandRegister["mv"] = mvCommand;
 
     cout << "Logging in as root" << endl;
     
