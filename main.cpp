@@ -18,6 +18,7 @@
 #include<signal.h>
 #include<set>
 #include<limits>
+#include<algorithm>
 #include<list>
 #ifdef _WIN32
 #include<windows.h>
@@ -267,6 +268,7 @@ void catCommand(const vector<string>& args) {
     }
 }
 
+
 void echoCommand(const vector<string>& args) {
     for (int i=1;i<args.size();i++) {
         cout << args[i];
@@ -385,12 +387,29 @@ void unameCommand(const vector<string>& args) {
 }
 
 void vimCommand(const vector<string>& args) {
+    #ifdef __linux__
     if (args.size()!= 2) {
         cout << "Error: vim command expects only one argument" << endl;
     }
     string fileName = args[1];
     string command = "vim" + fileName;
     system(command.c_str());
+    #else
+    cout << "Not supported" << endl;
+    #endif
+}
+
+void nanoCommand(const vector<string>& args) {
+    if (args.size()!= 2) {
+        cout << "Error: nano command expects only one argument" << endl;
+    }
+    #ifdef __linux__
+    string fileName = args[1];
+    string command = "nano" + fileName;
+    system(command.c_str());
+    #else
+    cout << "Not supported" << endl;
+    #endif
 }
 
 void rmCommand(const vector<string>& args) {
@@ -419,6 +438,7 @@ void rmCommand(const vector<string>& args) {
     }
     #endif
 }
+
 
 void gzipCommand(const vector<string>& args) {
     if (args.size()!= 2) {
@@ -577,6 +597,18 @@ void uptimeCommand(const vector<string>& args) {
     #endif  
 }
 
+void duCommand(const vector<string>& args) {
+    string path;
+    path = "C:\\";
+    #ifdef _WIN32
+    string command = "dir /s " + path;
+    system(command.c_str());
+    #elif __linux__
+    string command = "du -d 1 " + path;
+    system(command.c_str());
+    #endif
+}
+
 void wgetCommand(const vector<string>& args) {
     #ifdef _WIN32
     cout << "Windows doesnt support it" << endl;
@@ -621,6 +653,29 @@ void displayHistory(const vector<string>& args) {
         cout << "  " << count << "  " << command << endl;
         count++;
     }
+}
+
+void envCommand(const vector<string>& args) {
+    #ifdef _WIN32
+    system("set");
+    #elif __linux__
+    system("env");
+    #endif
+}
+
+void execCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string filename = args[1];
+    filename.erase(0, filename.find_first_not_of(" \t")); 
+    filename.erase(filename.find_last_not_of(" \t") + 1);
+
+    string compileCommand = "g++ -o " + filename.substr(0, filename.find_last_of('.')) + " " + filename;
+    system(compileCommand.c_str());
+    string execCommand = "./" + filename.substr(0, filename.find_last_of('.'));
+    system(execCommand.c_str());
+    #else
+    cout << "Not supported!" << endl;
+    #endif
 }
 
 void exitCommand(const vector<string>& args) {
@@ -738,6 +793,13 @@ void manCommand(const vector<string>& args) {
         {"free", "NAME  free - Display amount of free and used memory in the system\nSYNTAX  free"},
         {"df", "NAME  df - report file system disk space usage\nSYNTAX  df"},
         {"uniq", "NAME  uniq - report or omit repeated lines\nSYNTAX  uniq [filename]"},
+        {"exec", "NAME  exec - compiles and runs code written only in cpp\nSYNTAX  exec [filename]"},
+        {"env", "NAME  env - run a program in a modified environment\nSYNTAX  env"},
+        {"du" , "NAME   du - estimate file space usage\nSYNTAX du"},
+        {"python" , "NAME   python - compiles and runs python scripts\nSYNTAX python [filename]"},
+        {"git" , "NAME   git - git commands for version control\nSYNTAX git"},
+        {"vim" , "NAME   vim - opens files in vim editor\nSYNTAX vim [filename]"},
+        {"nano" , "NAME   nano - opens files in nano editor\nSYNTAX nano [filename]"},
         {"man", "NAME  man - an interface to the system reference manuals\nSYNTAX  man"}
     };
 
@@ -751,6 +813,94 @@ void manCommand(const vector<string>& args) {
     } else {
         cout << "Error: unknown command" << endl;
     }
+}
+
+void neofetchCommand() {
+    #ifdef __linux__
+    cout << "Running installation for neofetch" << endl;
+    cout << " " <<endl;
+    string command = "sudo apt install neofetch";
+    if (system(command.c_str()) != 0) {
+        cout << "Error installing neofetch" << endl;
+    }
+    cout << "NEOFETCH INSTALLATION SUCCESS" << endl;
+    #else
+    cout << "Not supported here!" << endl;
+    #endif
+}
+
+void neofetchDisplay() {
+    #ifdef __linux__
+    setenv("USER", ".nyan", 1);
+    system("neofetch");
+    #endif
+}
+
+void pythonInstall() {
+#ifdef __linux__
+    cout << "PYTHON INSTALLATION IN PROGRESS" << std::endl;
+    string installCommand = "sudo apt install python3";
+    if (system(installCommand.c_str()) != 0) {
+        cout << "Error installing Python!" << endl;
+    } else {
+        cout << "PYTHON INSTALLATION SUCCESSFUL!" << endl;
+    }
+#endif
+}
+
+void pythonCommand(const vector<string>& args) {
+#ifdef __linux__
+    if (args.size() < 2) {
+        cout << "Usage: pythonCommand <filename>" << endl;
+        return;
+    }
+
+    string filename = args[1];
+    filename.erase(0, filename.find_first_not_of(" \t"));
+    filename.erase(filename.find_last_not_of(" \t") + 1);
+
+    string compileCommand = "python3 " + filename;
+    if (system(compileCommand.c_str()) != 0) {
+        cout << "Error running Python script!" << endl;
+    }
+#else
+    cout << "Python command not supported on this platform!" << endl;
+#endif
+}
+
+void gitInstall() {
+    #ifdef __linux__
+    cout << "GIT INSTALLATION IN PROGRESS" << endl;
+    string command = "sudo apt-get install git";
+    system(command.c_str());
+    cout << "GIT INSTALLATION SUCCESS" << endl;
+    #endif
+}
+
+void gitCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "git --version";
+    system(command.c_str());
+    string command1 = "git --help";
+    system(command1.c_str());
+    #else
+    cout << "Not supported" << endl;
+    #endif
+}
+
+void aptInstall() {
+    string command = "sudo apt-get update && sudo apt-get install -y apt";
+    cout << "APT INSTALLATION IN PROGRESS" << endl;
+    cout << " " << endl;
+    if (system(command.c_str()) != 0) {
+        cout << "Error installing apt" << endl;
+    }
+    cout << "APT INSTALLATION SUCCESS" << endl;
+    cout << " " << endl;
+    system("sudo apt update");
+    cout << " " <<endl;
+    cout << "APT UPDATE SUCCESS" << endl;
+    cout << " " << endl;
 }
 
 int main() {
@@ -797,8 +947,29 @@ int main() {
     commandRegister["man"] = manCommand;
     commandRegister["wget"] = wgetCommand;
     commandRegister["mv"] = mvCommand;
+    commandRegister["exec"] = execCommand;
+    commandRegister["env"] = envCommand;
+    commandRegister["du"] = duCommand;
+    commandRegister["python"] = pythonCommand;
+    commandRegister["git"] = gitCommand;
+    commandRegister["nano"] = nanoCommand;
+    
 
+    #ifdef __linux__
+    aptInstall();
+    pythonInstall();
+    gitInstall();
+    cout << "\x1B[2J\x1B[H";
+    neofetchCommand();
+    #endif
+
+    #ifdef __linux__
+    neofetchDisplay();
+    #endif
+    cout << "WELCOME TO .nyan" << endl;
+    cout << " " << endl;
     loginAsRoot();
+    cout << " " << endl;
     addRoot();
 
     cout << endl;
