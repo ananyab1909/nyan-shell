@@ -679,7 +679,9 @@ void execCommand(const vector<string>& args) {
 }
 
 void exitCommand(const vector<string>& args) {
+    cout << "[SESSION TERMINATED]" << endl;
     cout<< "Logging out from .nyan" <<endl;
+    sleep(2);
     exit(1);
 }
 
@@ -800,6 +802,8 @@ void manCommand(const vector<string>& args) {
         {"git" , "NAME   git - git commands for version control\nSYNTAX git"},
         {"vim" , "NAME   vim - opens files in vim editor\nSYNTAX vim [filename]"},
         {"nano" , "NAME   nano - opens files in nano editor\nSYNTAX nano [filename]"},
+        {"neofetch" , "NAME   neofetch - displays system information accompanied by ascii art\nSYNTAX neofetch"},
+        {"screen" , "NAME   screen - opens another screen\nSYNTAX screen"},
         {"man", "NAME  man - an interface to the system reference manuals\nSYNTAX  man"}
     };
 
@@ -814,6 +818,7 @@ void manCommand(const vector<string>& args) {
         cout << "Error: unknown command" << endl;
     }
 }
+
 
 void neofetchCommand() {
     #ifdef __linux__
@@ -830,6 +835,13 @@ void neofetchCommand() {
 }
 
 void neofetchDisplay() {
+    #ifdef __linux__
+    setenv("USER", ".nyan", 1);
+    system("neofetch");
+    #endif
+}
+
+void neofetchTerminalDisplay(const vector<string>& args) {
     #ifdef __linux__
     setenv("USER", ".nyan", 1);
     system("neofetch");
@@ -903,6 +915,24 @@ void aptInstall() {
     cout << " " << endl;
 }
 
+void run(string filename) {
+    #ifdef __linux__
+    string compileCommand = "g++ -o " + filename.substr(0, filename.find_last_of('.')) + " " + filename;
+    system(compileCommand.c_str());
+    string execCommand = "./" + filename.substr(0, filename.find_last_of('.'));
+    system(execCommand.c_str());
+    #else
+    cout << "Not supported!" << endl;
+    #endif
+}
+
+void screenCommand(const vector<string>& args) {
+    cout << "Press Enter to enter a new screen" << endl;
+    cin.get();
+    cout << "\x1B[2J\x1B[H";
+    run("main.cpp");
+}
+
 int main() {
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -953,7 +983,8 @@ int main() {
     commandRegister["python"] = pythonCommand;
     commandRegister["git"] = gitCommand;
     commandRegister["nano"] = nanoCommand;
-    
+    commandRegister["neofetch"] = neofetchTerminalDisplay;
+    commandRegister["screen"] = screenCommand;
 
     #ifdef __linux__
     aptInstall();
@@ -987,7 +1018,7 @@ int main() {
 
         if (commandRegister.find(tokens[0]) != commandRegister.end()) {
                 commandRegister[tokens[0]](tokens);
-        } 
+        }
     }
     return 0;
 }
