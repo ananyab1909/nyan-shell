@@ -20,6 +20,8 @@
 #include<limits>
 #include<algorithm>
 #include<list>
+#include<csignal>
+#include<unistd.h>
 #ifdef _WIN32
 #include<windows.h>
 #endif
@@ -34,7 +36,8 @@ map<string, bool> loggedInUsers;
 string currentUser;
 list<string> loginOrder;
 vector<string> allUsers;
-
+vector<string> sudoCommands;
+bool exitLoop = false;
 
 vector<string> tokenize(const string& input) {
     vector<string> tokens;
@@ -678,6 +681,15 @@ void execCommand(const vector<string>& args) {
     #endif
 }
 
+void netstatCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "netstat -an";
+    system(command.c_str());
+    #else
+    cout << "Not supported!" << endl;
+    #endif
+}
+
 void exitCommand(const vector<string>& args) {
     cout << "[SESSION TERMINATED]" << endl;
     cout<< "Logging out from .nyan" <<endl;
@@ -765,6 +777,88 @@ void usersCommand(const vector<string>& arg) {
     }
 } 
 
+string quote(const string& str) {
+    string quoted;
+    quoted.push_back('"');
+    for (char c : str) {
+        if (c == '"' || c == '\\') {
+            quoted.push_back('\\');
+        }
+        quoted.push_back(c);
+    }
+    quoted.push_back('"');
+    return quoted;
+}
+
+void sudoInstall(const vector<string>& args) {
+    #ifdef __linux__
+    string argsString;
+    bool isFirstArg = true;
+    for (const string& arg : args) {
+        argsString += arg;
+        isFirstArg = false;
+    }
+    system(argsString.c_str());
+    sudoCommands.push_back(argsString);
+    #endif   
+}
+
+void playCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string filename;
+    cout << "Enter the audio file name: " << endl;;
+    getline(cin, filename);
+    string command = "mplayer " + quote(filename);
+    cout << "Executing command: " << command << endl;
+    int status = system(command.c_str());
+    if (status == -1) {
+        cerr << "Error playing audio file: " << endl;
+        return;
+    }
+    if (WEXITSTATUS(status) != 0) {
+        cerr << "Error playing audio file: " << strerror(WEXITSTATUS(status)) << endl;
+        return;
+    }
+    cout << "Command executed successfully." << endl;
+    #else
+    cout << "Not supported!" << endl;
+    #endif
+}
+
+void streamCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string filename;
+    cout << "Enter the video file name: " << endl;;
+    getline(cin, filename);
+    string command = "mplayer " + quote(filename);
+    cout << "Executing command: " << command << endl;
+    int status = system(command.c_str());
+    if (status == -1) {
+        cerr << "Error playing audio file: " << endl;
+        return;
+    }
+    if (WEXITSTATUS(status) != 0) {
+        cerr << "Error playing video file: " << strerror(WEXITSTATUS(status)) << endl;
+        return;
+    }
+    cout << "Command executed successfully." << endl;
+    #else
+    cout << "Not supported!" << endl;
+    #endif   
+}
+
+void topCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "top";
+    system(command.c_str());
+    #endif
+}
+
+void shutdownCommand(const vector<string>& args) {
+    cout << "Shutting down the system..." << endl;
+    system("shutdown -h now");
+}
+
 void manCommand(const vector<string>& args) {
     static const map<string, string> commandHelp = {
         {"pwd", "NAME  pwd - print name of current/working directory\nSYNTAX  pwd"},
@@ -804,6 +898,11 @@ void manCommand(const vector<string>& args) {
         {"nano" , "NAME   nano - opens files in nano editor\nSYNTAX nano [filename]"},
         {"neofetch" , "NAME   neofetch - displays system information accompanied by ascii art\nSYNTAX neofetch"},
         {"screen" , "NAME   screen - opens another screen\nSYNTAX screen"},
+        {"play" , "NAME   play - plays music directly from terminal\nSYNTAX play"},
+        {"stream" , "NAME   stream - plays video directly from terminal\nSYNTAX video"},
+        {"top" , "NAME   top - displays real-time system resource usage\nSYNTAX top"},
+        {"shutdown" , "NAME   shutdown - shutdowns your system\nSYNTAX shutdown"},
+        {"netstat" , "NAME   netstat - display information about active network connections, routing tables, and interface statistics\nSYNTAX netstat"},
         {"man", "NAME  man - an interface to the system reference manuals\nSYNTAX  man"}
     };
 
@@ -831,6 +930,14 @@ void neofetchCommand() {
     cout << "NEOFETCH INSTALLATION SUCCESS" << endl;
     #else
     cout << "Not supported here!" << endl;
+    #endif
+}
+
+void netstatInstall() {
+    #ifdef __linux__
+    string command = "sudo apt install net-tools";
+    system(command.c_str());
+    cout << "INSTALLATION SUCCESS" << endl;
     #endif
 }
 
@@ -898,6 +1005,16 @@ void gitCommand(const vector<string>& args) {
     #else
     cout << "Not supported" << endl;
     #endif
+}
+
+void musicInstall() {
+    string command = "sudo add-apt-repository universe";
+    system(command.c_str());
+    command = "sudo apt update";
+    system(command.c_str());
+    command = "sudo apt install mplayer mplayer-gui";
+    system(command.c_str());
+    cout << "SUCCESS!" << endl;
 }
 
 void aptInstall() {
@@ -985,11 +1102,19 @@ int main() {
     commandRegister["nano"] = nanoCommand;
     commandRegister["neofetch"] = neofetchTerminalDisplay;
     commandRegister["screen"] = screenCommand;
+    commandRegister["play"] = playCommand;
+    commandRegister["sudo"] = sudoInstall;
+    commandRegister["stream"] = streamCommand;
+    commandRegister["netstat"] = netstatCommand;
+    commandRegister["top"] = topCommand;
+    commandRegister["shutdown"] = shutdownCommand;
 
     #ifdef __linux__
     aptInstall();
     pythonInstall();
+    musicInstall();
     gitInstall();
+    netstatInstall();
     cout << "\x1B[2J\x1B[H";
     neofetchCommand();
     #endif
@@ -1015,9 +1140,25 @@ int main() {
         if (tokens[0] == "login") {
             loginCommand(tokens);
         }
-
         if (commandRegister.find(tokens[0]) != commandRegister.end()) {
                 commandRegister[tokens[0]](tokens);
+        }
+        else {
+            if(find(sudoCommands.begin(), sudoCommands.end(), tokens[0]) != sudoCommands.end()) {
+                cout << "RUNNING COMMAND!" << endl;
+                system(tokens[0].c_str());
+            }
+            else {
+                string aptCommand = "sudo apt install " + tokens[0];
+                if (system(aptCommand.c_str()) == 0) {
+                    cout << "COMMAND INSTALLATION SUCCESS!" << endl;
+                    cout << "RUNNING COMMAND!" << endl;
+                    system(tokens[0].c_str());
+                    sudoCommands.push_back(tokens[0]);
+                } else {
+                    cout << "COMMAND CANNOT BE INSTALLED!" << endl;
+                }
+            }
         }
     }
     return 0;
