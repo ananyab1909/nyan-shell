@@ -37,7 +37,6 @@ string currentUser;
 list<string> loginOrder;
 vector<string> allUsers;
 vector<string> sudoCommands;
-bool exitLoop = false;
 
 vector<string> tokenize(const string& input) {
     vector<string> tokens;
@@ -57,17 +56,41 @@ vector<string> tokenize(const string& input) {
     return tokens;
 }
 
+#ifdef __linux__
+#include <iostream>
+
+void setColor(int color) {
+    cout << "\033[" << color << "m";
+}
+#endif
+
 void lsCommand() {
     DIR *dir;
     struct dirent *ent;
     dir = opendir(".");
-    if (dir!= NULL) {
-        while ((ent = readdir(dir))!= NULL) {
-            cout << ent->d_name << endl;
+    if (dir != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            if (ent->d_type == DT_DIR) {
+                #ifdef __linux__
+                setColor(34); 
+                #endif
+                cout << ent->d_name << endl;
+                #ifdef __linux__
+                setColor(37); 
+                #endif
+            } else {
+                #ifdef __linux__
+                setColor(37); 
+                #endif
+                cout << ent->d_name << endl;
+                #ifdef __linux__
+                setColor(37);
+                #endif 
+            }
         }
         closedir(dir);
     } else {
-        cout << "Error: Unable to read directory" << endl;
+        cout << "Error: Unable to read directory" << std::endl;
     }
 }
 
@@ -184,8 +207,12 @@ void mkdirCommand(const vector<string>& args) {
     dir.erase(dir.find_last_not_of(" \t") + 1);
     char cmd[256];
     sprintf(cmd, "mkdir %s", dir.c_str());
-    system(cmd); 
-    cout << "Directory created successfully!" << endl;
+    if (system(cmd)==0) { 
+        cout << "Directory created successfully!" << endl;
+    }
+    else {
+        cout << "Error: Unable to create" << endl;
+    }
 }
 
 void rmdirCommand(const vector<string>& args) {
@@ -527,14 +554,6 @@ void dfCommand(const vector<string>& args) {
     #endif
 }
 
-string basename(const string& path) {
-    size_t pos = path.find_last_of('/');
-    if (pos!= string::npos) {
-        return path.substr(pos + 1);
-    }
-    return path;
-}
-
 void mvCommand(const vector<string>& args) {
     struct stat st;
     bool isMove = true; 
@@ -693,7 +712,7 @@ void netstatCommand(const vector<string>& args) {
 void exitCommand(const vector<string>& args) {
     cout << "[SESSION TERMINATED]" << endl;
     cout<< "Logging out from .nyan" <<endl;
-    sleep(2);
+    sleep(1);
     exit(1);
 }
 
@@ -790,19 +809,6 @@ string quote(const string& str) {
     return quoted;
 }
 
-void sudoInstall(const vector<string>& args) {
-    #ifdef __linux__
-    string argsString;
-    bool isFirstArg = true;
-    for (const string& arg : args) {
-        argsString += arg;
-        isFirstArg = false;
-    }
-    system(argsString.c_str());
-    sudoCommands.push_back(argsString);
-    #endif   
-}
-
 void playCommand(const vector<string>& args) {
     #ifdef __linux__
     string filename;
@@ -854,6 +860,21 @@ void topCommand(const vector<string>& args) {
     #endif
 }
 
+void writeCommand(const vector<string>& args) {
+    string command = "libreoffice --writer";
+    system(command.c_str());
+}
+
+void excelCommand(const vector<string>& args) {
+    string command = "libreoffice --calc";
+    system(command.c_str());    
+}
+
+void presentationCommand(const vector<string>& args) {
+    string command = "libreoffice --impress";
+    system(command.c_str());    
+}
+
 void shutdownCommand(const vector<string>& args) {
     cout << "Shutting down the system..." << endl;
     system("shutdown -h now");
@@ -902,6 +923,9 @@ void manCommand(const vector<string>& args) {
         {"stream" , "NAME   stream - plays video directly from terminal\nSYNTAX video"},
         {"top" , "NAME   top - displays real-time system resource usage\nSYNTAX top"},
         {"shutdown" , "NAME   shutdown - shutdowns your system\nSYNTAX shutdown"},
+        {"write" , "NAME   write - writes in a Microsoft Word compatible\nSYNTAX write"},
+        {"excel" , "NAME   excel - makes spreadsheets in a Microsoft Excel compatible\nSYNTAX excel"},
+        {"presentation" , "NAME   presentation - makes slides in a Microsoft Powerpoint compatible\nSYNTAX presentation"},
         {"netstat" , "NAME   netstat - display information about active network connections, routing tables, and interface statistics\nSYNTAX netstat"},
         {"man", "NAME  man - an interface to the system reference manuals\nSYNTAX  man"}
     };
@@ -1007,6 +1031,11 @@ void gitCommand(const vector<string>& args) {
     #endif
 }
 
+void libreOfficeInstall() {
+    string command = "sudo apt install libreoffice";
+    system(command.c_str());
+}
+
 void musicInstall() {
     string command = "sudo add-apt-repository universe";
     system(command.c_str());
@@ -1051,6 +1080,8 @@ void screenCommand(const vector<string>& args) {
 }
 
 int main() {
+    bool commandFound = false;
+
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         currentWorkingDirectory = cwd;
@@ -1103,17 +1134,20 @@ int main() {
     commandRegister["neofetch"] = neofetchTerminalDisplay;
     commandRegister["screen"] = screenCommand;
     commandRegister["play"] = playCommand;
-    commandRegister["sudo"] = sudoInstall;
     commandRegister["stream"] = streamCommand;
     commandRegister["netstat"] = netstatCommand;
     commandRegister["top"] = topCommand;
     commandRegister["shutdown"] = shutdownCommand;
+    commandRegister["write"] = writeCommand;
+    commandRegister["presentation"] = presentationCommand;
+    commandRegister["excel"] = excelCommand;
 
     #ifdef __linux__
     aptInstall();
     pythonInstall();
     musicInstall();
     gitInstall();
+    libreOfficeInstall();
     netstatInstall();
     cout << "\x1B[2J\x1B[H";
     neofetchCommand();
@@ -1132,33 +1166,47 @@ int main() {
     
     string input;
     while (true) {
+        #ifdef __linux__
+        setColor(35);
+        #endif
         cout << ".nyan:~$ ";
+        #ifdef __linux__
+        setColor(37);
+        #endif
         getline(cin, input);
         addCommand(input);
 
         vector<string> tokens = tokenize(input);
-        if (tokens[0] == "login") {
+
+        if (tokens[0] == "login"){
             loginCommand(tokens);
-        }
-        if (commandRegister.find(tokens[0]) != commandRegister.end()) {
-                commandRegister[tokens[0]](tokens);
-        }
+        }   
         else {
-            if(find(sudoCommands.begin(), sudoCommands.end(), tokens[0]) != sudoCommands.end()) {
-                cout << "RUNNING COMMAND!" << endl;
-                system(tokens[0].c_str());
-            }
-            else {
-                string aptCommand = "sudo apt install " + tokens[0];
-                if (system(aptCommand.c_str()) == 0) {
-                    cout << "COMMAND INSTALLATION SUCCESS!" << endl;
+            if (commandRegister.find(tokens[0]) != commandRegister.end()) {
+                commandRegister[tokens[0]](tokens);
+            } else {
+                if (find(sudoCommands.begin(), sudoCommands.end(), tokens[0]) != sudoCommands.end()) {
                     cout << "RUNNING COMMAND!" << endl;
                     system(tokens[0].c_str());
-                    sudoCommands.push_back(tokens[0]);
                 } else {
-                    cout << "COMMAND CANNOT BE INSTALLED!" << endl;
+                    if (tokens[0]!= "sudo")
+                    {
+                        string aptCommand = "sudo apt install " + tokens[0];
+                        if (system(aptCommand.c_str()) == 0) {
+                            cout << "COMMAND INSTALLATION SUCCESS!" << endl;
+                            cout << "RUNNING COMMAND!" << endl;
+                            system(tokens[0].c_str());
+                            sudoCommands.push_back(tokens[0]);
+                        } else {
+                            cout << "COMMAND CANNOT BE INSTALLED!" << endl;  
+                        }
+                    }
                 }
             }
+        }
+
+        if (tokens[0] == "sudo") {
+            cout << "Prompt only the command to install" << endl;
         }
     }
     return 0;
