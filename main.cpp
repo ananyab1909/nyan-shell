@@ -80,7 +80,7 @@ void lsCommand() {
                 #endif
             } else {
                 #ifdef __linux__
-                setColor(37); 
+                setColor(32); 
                 #endif
                 cout << ent->d_name << endl;
                 #ifdef __linux__
