@@ -1193,6 +1193,7 @@ void manCommand(const vector<string>& args) {
         {"firefox" , "NAME  firefox - opens firefox from command line\nSYNTAX firefox"},
         {"about" , "NAME   about - provides information about the shell\nSYNTAX about"},
         {"math" , "NAME   math - assists any mathematical operation\nSYNTAX math"},
+        {"traceroute" , "NAME   traceroute - traces the route packets take to a network host\nSYNTAX traceroute [host]"},
         {"init" , "NAME   init - changes the runlevel of the system\nSYNTAX init [runlevel]"},
         {"mount" , "NAME   mount - mounts filesystems\nSYNTAX mount [source] [destination]"},
         {"umount" , "NAME   unmount - unmounts filesystems\nSYNTAX umount [source]"},
@@ -1230,6 +1231,31 @@ void neofetchCommand() {
     cout << "NEOFETCH INSTALLATION SUCCESS" << endl;
     #else
     cout << "Not supported here!" << endl;
+    #endif
+}
+
+void tracerouteInstall() {
+    #ifdef __linux__
+    string command = "sudo apt install inetutils-traceroute";
+    if (system(command.c_str()) != 0) {
+        cout << "Error installing traceroute" << endl;
+    }
+    cout << "TRACEROUTE INSTALLATION SUCCESS" << endl;
+    #endif
+}
+
+void tracerouteCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 2)
+    {
+        cout << "traceroute command expects only two arguements" << endl;
+        return;
+    }
+    string cmd = args[1];
+    cmd.erase(0, cmd.find_first_not_of(" \t"));
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    string command = "traceroute " + cmd;
+    system(command.c_str());
     #endif
 }
 
@@ -1538,6 +1564,7 @@ int main() {
     commandRegister["mount"] = mountCommand;
     commandRegister["all"] = allCommand;
     commandRegister["service"] = serviceCommand;
+    commandRegister["traceroute"] = tracerouteCommand;
 
     #ifdef __linux__
     aptInstall();
@@ -1547,6 +1574,7 @@ int main() {
     gitInstall();
     libreOfficeInstall();
     httpSnapInstall();
+    tracerouteInstall();
     inotifytoolsInstall();
     firefoxInstall();
     netstatInstall();
