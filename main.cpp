@@ -1284,20 +1284,29 @@ void httpCommand(const vector<string>& args) {
     }
     cout << "Command execution success" << endl;
     #endif
-
 }
 
 void neofetchDisplay() {
     #ifdef __linux__
+    string ascii_art;
+    ifstream file("princess-ascii.txt");
+    getline(file, ascii_art, '\0'); 
+    file.close();
     setenv("USER", ".nyan", 1);
-    system("neofetch");
+    string command = "neofetch --ascii \"" + ascii_art + "\"";
+    system(command.c_str());
     #endif
 }
 
 void neofetchTerminalDisplay(const vector<string>& args) {
     #ifdef __linux__
+    string ascii_art;
+    ifstream file("princess-ascii.txt");
+    getline(file, ascii_art, '\0'); 
+    file.close();
     setenv("USER", ".nyan", 1);
-    system("neofetch");
+    string command = "neofetch --ascii \"" + ascii_art + "\"";
+    system(command.c_str());
     #endif
 }
 
