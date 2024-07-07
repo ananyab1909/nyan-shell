@@ -21,6 +21,7 @@
 #include<algorithm>
 #include<list>
 #include<csignal>
+#include<unordered_map>
 #include<unistd.h>
 #ifdef _WIN32
 #include<windows.h>
@@ -665,6 +666,16 @@ void uniqCommand(const vector<string>& args) {
     file.close();
 }
 
+void lessCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string command = "less " + source;
+    system(command.c_str());
+    #endif
+}
+
 void addCommand(const string& command) {
     history.push_back(command);
 }
@@ -685,6 +696,21 @@ void envCommand(const vector<string>& args) {
     #endif
 }
 
+void killCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string pname;
+    cout << "Enter name of process" << endl;
+    cin >> pname;
+    char cmd[256];
+    sprintf(cmd, "pkill %s", pname.c_str());
+    if (system(cmd) == 0) {
+        cout << "Process killed successfully!" << endl;
+    } else {
+        cout << "Failed to kill process." << endl;
+    }
+    #endif
+}
+
 void execCommand(const vector<string>& args) {
     #ifdef __linux__
     string filename = args[1];
@@ -698,6 +724,19 @@ void execCommand(const vector<string>& args) {
     #else
     cout << "Not supported!" << endl;
     #endif
+}
+
+void bashCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string filename = args[1];
+    filename.erase(0, filename.find_first_not_of(" \t")); 
+    filename.erase(filename.find_last_not_of(" \t") + 1); 
+    string command = "chmod 744 " + filename;
+    system(command.c_str());
+    command = "./" + filename ;
+    system(command.c_str());
+    cout << "Script executed successfully!" << endl;
+    #endif  
 }
 
 void netstatCommand(const vector<string>& args) {
@@ -860,24 +899,126 @@ void topCommand(const vector<string>& args) {
     #endif
 }
 
+void rsyncCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string destination = args[2];
+    destination.erase(0, destination.find_first_not_of(" \t")); 
+    destination.erase(destination.find_last_not_of(" \t") + 1);
+    cout << source << endl;
+    cout << destination << endl;
+    string command = "rsync -av " + source + " " + destination;
+    if (system(command.c_str()) != 0) {
+        cout << "Error: Unable to run command" << endl;
+    }
+    cout << "Command executed sucessfully" << endl;
+    #endif
+}
+
+void sysinfoCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "xsysinfo";
+    if (system(command.c_str()) != 0) {
+        cout << "Error: Unable to run command" << endl;
+    }
+    cout << "Command executed sucessfully" << endl;
+    #endif
+
+}
+
 void writeCommand(const vector<string>& args) {
-    string command = "libreoffice --writer";
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+
+    string fileExtension = ".odt";
+    size_t dotPos = source.find_last_of('.');
+    if (dotPos == string::npos) {
+        source += fileExtension;
+    } else {
+        source.replace(dotPos, fileExtension.size(), fileExtension);
+    }
+
+    ofstream file(source);
+    if (!file) {
+        cout << "Error: Unable to create file " << source << endl;
+        return;
+    }
+
+    string command = "libreoffice --writer \"" + source + "\"";
     system(command.c_str());
+    #endif
 }
 
 void excelCommand(const vector<string>& args) {
-    string command = "libreoffice --calc";
-    system(command.c_str());    
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+
+    string fileExtension = ".ods";
+    size_t dotPos = source.find_last_of('.');
+    if (dotPos == string::npos) {
+        source += fileExtension;
+    } else {
+        source.replace(dotPos, fileExtension.size(), fileExtension);
+    }
+    ofstream file(source);
+    if (!file) {
+        cout << "Error: Unable to create file " << source << endl;
+        return;
+    }
+
+    string command = "libreoffice --calc \"" + source + "\"";
+    system(command.c_str());   
+    #endif
 }
 
 void presentationCommand(const vector<string>& args) {
-    string command = "libreoffice --impress";
-    system(command.c_str());    
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+
+    string fileExtension = ".odp";
+    size_t dotPos = source.find_last_of('.');
+    if (dotPos == string::npos) {
+        source += fileExtension;
+    } else {
+        source.replace(dotPos, fileExtension.size(), fileExtension);
+    }
+    ofstream file(source);
+    if (!file) {
+        cout << "Error: Unable to create file " << source << endl;
+        return;
+    }
+
+    string command = "libreoffice --impress \"" + source + "\"";
+    system(command.c_str());
+    #endif    
+}
+
+void mathCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "libreoffice --math";
+    system(command.c_str());
+    #endif
 }
 
 void shutdownCommand(const vector<string>& args) {
-    cout << "Shutting down the system..." << endl;
+    cout << "Shutting down the system" << endl;
     system("shutdown -h now");
+}
+
+void ifconfigCommand(const vector<string>& args) {
+    #ifdef _WIN32
+        system("ipconfig");
+    #elif __linux__
+        system("ifconfig");
+    #endif
 }
 
 void manCommand(const vector<string>& args) {
@@ -911,6 +1052,7 @@ void manCommand(const vector<string>& args) {
         {"df", "NAME  df - report file system disk space usage\nSYNTAX  df"},
         {"uniq", "NAME  uniq - report or omit repeated lines\nSYNTAX  uniq [filename]"},
         {"exec", "NAME  exec - compiles and runs code written only in cpp\nSYNTAX  exec [filename]"},
+        {"bash", "NAME  bash - compiles and runs code written in bash\nSYNTAX  bash [filename]"},
         {"env", "NAME  env - run a program in a modified environment\nSYNTAX  env"},
         {"du" , "NAME   du - estimate file space usage\nSYNTAX du"},
         {"python" , "NAME   python - compiles and runs python scripts\nSYNTAX python [filename]"},
@@ -919,13 +1061,20 @@ void manCommand(const vector<string>& args) {
         {"nano" , "NAME   nano - opens files in nano editor\nSYNTAX nano [filename]"},
         {"neofetch" , "NAME   neofetch - displays system information accompanied by ascii art\nSYNTAX neofetch"},
         {"screen" , "NAME   screen - opens another screen\nSYNTAX screen"},
+        {"kill" , "NAME   kill - kills the process\nSYNTAX kill"},
         {"play" , "NAME   play - plays music directly from terminal\nSYNTAX play"},
         {"stream" , "NAME   stream - plays video directly from terminal\nSYNTAX video"},
         {"top" , "NAME   top - displays real-time system resource usage\nSYNTAX top"},
+        {"ifconfig" , "NAME   ifconfig - lists all network interface configurations\nSYNTAX ifconfig"},
         {"shutdown" , "NAME   shutdown - shutdowns your system\nSYNTAX shutdown"},
-        {"write" , "NAME   write - writes in a Microsoft Word compatible\nSYNTAX write"},
-        {"excel" , "NAME   excel - makes spreadsheets in a Microsoft Excel compatible\nSYNTAX excel"},
-        {"presentation" , "NAME   presentation - makes slides in a Microsoft Powerpoint compatible\nSYNTAX presentation"},
+        {"sysinfo" , "NAME  sysinfo - displays system information\nSYNTAX sysinfo"},
+        {"about" , "NAME   about - provides information about the shell\nSYNTAX about"},
+        {"math" , "NAME   math - assists any mathematical operation\nSYNTAX math"},
+        {"inotify" , "NAME   inotify - monitor the specified directory and its subdirectories for create, delete, modify, and other events\nSYNTAX inotify [filename]"},
+        {"rsync" , "NAME   rsync - syncs files and directories between two locations\nSYNTAX rsync [source] [destination]"},
+        {"write" , "NAME   write - writes in a Microsoft Word compatible\nSYNTAX write [filename]"},
+        {"excel" , "NAME   excel - makes spreadsheets in a Microsoft Excel compatible\nSYNTAX excel [filename]"},
+        {"presentation" , "NAME   presentation - makes slides in a Microsoft Powerpoint compatible\nSYNTAX presentation [filename]"},
         {"netstat" , "NAME   netstat - display information about active network connections, routing tables, and interface statistics\nSYNTAX netstat"},
         {"man", "NAME  man - an interface to the system reference manuals\nSYNTAX  man"}
     };
@@ -940,6 +1089,7 @@ void manCommand(const vector<string>& args) {
     } else {
         cout << "Error: unknown command" << endl;
     }
+    
 }
 
 
@@ -976,6 +1126,24 @@ void neofetchTerminalDisplay(const vector<string>& args) {
     #ifdef __linux__
     setenv("USER", ".nyan", 1);
     system("neofetch");
+    #endif
+}
+
+void braveInstall() {
+    #ifdef __linux__
+    string command = "sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg";
+    system(command.c_str());
+    cout << "BRAVE INSTALLATION SUCCESS" << endl;
+    #endif
+}
+
+void inotifyCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string cmd = args[1];
+    cmd.erase(0, cmd.find_first_not_of(" \t"));
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    string command = "inotifywait -m -r " + cmd;
+    system(command.c_str());
     #endif
 }
 
@@ -1022,10 +1190,27 @@ void gitInstall() {
 
 void gitCommand(const vector<string>& args) {
     #ifdef __linux__
-    string command = "git --version";
-    system(command.c_str());
-    string command1 = "git --help";
-    system(command1.c_str());
+    int numArgs = args.size();
+    string argString;
+    for (const auto& arg : args) {
+        if (!argString.empty()) {
+            argString += " ";
+        }
+        argString += arg;
+    }
+    string cmd = args[0];
+    if (cmd == "git") {
+        if (numArgs == 1) {
+            string command = "git --version";
+            system(command.c_str());
+            string command1 = "git --help";
+            system(command1.c_str());  
+        }
+        else {
+            cout << argString << endl;
+            system(argString.c_str());
+        }
+    }
     #else
     cout << "Not supported" << endl;
     #endif
@@ -1036,6 +1221,12 @@ void libreOfficeInstall() {
     system(command.c_str());
 }
 
+void xsysinfo() {
+    string command = "sudo apt install xsysinfo";
+    system(command.c_str());
+    cout << "SUCCESS!" << endl;
+}
+
 void musicInstall() {
     string command = "sudo add-apt-repository universe";
     system(command.c_str());
@@ -1044,6 +1235,12 @@ void musicInstall() {
     command = "sudo apt install mplayer mplayer-gui";
     system(command.c_str());
     cout << "SUCCESS!" << endl;
+}
+
+void inotifytoolsInstall() {
+    string command = "sudo apt install inotify-tools";
+    system(command.c_str());
+    cout << " INOTIFY SUCCESS" << endl;
 }
 
 void aptInstall() {
@@ -1077,6 +1274,34 @@ void screenCommand(const vector<string>& args) {
     cin.get();
     cout << "\x1B[2J\x1B[H";
     run("main.cpp");
+}
+
+void aboutCommand(const vector<string>& args) {
+    cout << "A shell written in cpp language and is powered by apt package manager" << endl;
+    cout << "Suitable for cross platforms, but not entirely" << endl;
+    cout << "More suited for Linux" << endl; 
+    cout << "Have an inbuilt brave browser" << endl;
+}
+
+int countWords(const string& input) {
+    int count = 0;
+    string word;
+
+    for (char c : input) {
+        if (c == ' ') {
+            if (!word.empty()) {
+                count++;
+                word.clear();
+            }
+        } else {
+            word += c;
+        }
+    }
+
+    if (!word.empty()) {
+        count++;
+    }
+    return count;
 }
 
 int main() {
@@ -1141,13 +1366,25 @@ int main() {
     commandRegister["write"] = writeCommand;
     commandRegister["presentation"] = presentationCommand;
     commandRegister["excel"] = excelCommand;
+    commandRegister["math"] = mathCommand;
+    commandRegister["about"] = aboutCommand;
+    commandRegister["kill"] = killCommand;
+    commandRegister["rsync"] = rsyncCommand;
+    commandRegister["bash"] = bashCommand;
+    commandRegister["ifconfig"] = ifconfigCommand;
+    commandRegister["sysinfo"] = sysinfoCommand;
+    commandRegister["less"] = lessCommand;
+    commandRegister["inotify"] = inotifyCommand;
 
     #ifdef __linux__
     aptInstall();
     pythonInstall();
     musicInstall();
+    xsysinfo();
     gitInstall();
     libreOfficeInstall();
+    inotifytoolsInstall();
+    braveInstall();
     netstatInstall();
     cout << "\x1B[2J\x1B[H";
     neofetchCommand();
@@ -1163,8 +1400,9 @@ int main() {
     addRoot();
 
     cout << endl;
-    
+
     string input;
+    int count = countWords(input);
     while (true) {
         #ifdef __linux__
         setColor(35);
@@ -1174,7 +1412,6 @@ int main() {
         setColor(37);
         #endif
         getline(cin, input);
-        addCommand(input);
 
         vector<string> tokens = tokenize(input);
 
@@ -1187,7 +1424,12 @@ int main() {
             } else {
                 if (find(sudoCommands.begin(), sudoCommands.end(), tokens[0]) != sudoCommands.end()) {
                     cout << "RUNNING COMMAND!" << endl;
-                    system(tokens[0].c_str());
+                    if (count == 1) {
+                        system(tokens[0].c_str());
+                    }
+                    else {
+                        system(input.c_str());
+                    }
                 } else {
                     if (tokens[0]!= "sudo")
                     {
