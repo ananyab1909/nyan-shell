@@ -688,6 +688,13 @@ void displayHistory(const vector<string>& args) {
     }
 }
 
+void allCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "service --status-all";
+    system(command.c_str());
+    #endif
+}
+
 void envCommand(const vector<string>& args) {
     #ifdef _WIN32
     system("set");
@@ -928,6 +935,25 @@ void sysinfoCommand(const vector<string>& args) {
 
 }
 
+void serviceCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 3)
+    {
+        cout << "Error: service expects only three arguements";
+        return;
+    }
+    string name = args[1];
+    name.erase(0, name.find_first_not_of(" \t")); 
+    name.erase(name.find_last_not_of(" \t") + 1);
+    string action = args[2];
+    action.erase(0, action.find_first_not_of(" \t")); 
+    action.erase(action.find_last_not_of(" \t") + 1); 
+    string command = "service " + name + " " + action;
+    system(command.c_str());  
+    cout << "Command execution success!" << endl;
+    #endif
+}
+
 void writeCommand(const vector<string>& args) {
     #ifdef __linux__
     string source = args[1];
@@ -1008,9 +1034,100 @@ void mathCommand(const vector<string>& args) {
     #endif
 }
 
+void watchCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    string command = "watch " + source;
+    system(command.c_str());
+    cout << "Execution successful" << endl;
+    #endif
+}
+
+void ifstatCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "ifstat";
+    system(command.c_str());
+    cout << "Command executed successfully" << endl;
+    #endif   
+}
+
+void htopCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "htop";
+    system(command.c_str());
+    cout << "Command executed successfully" << endl;
+    #endif   
+}
+
 void shutdownCommand(const vector<string>& args) {
     cout << "Shutting down the system" << endl;
     system("shutdown -h now");
+}
+
+void mountCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string dest = args[2];
+    dest.erase(0, dest.find_first_not_of(" \t")); 
+    dest.erase(dest.find_last_not_of(" \t") + 1); 
+    if (args.size() < 3)
+    {
+        cout << "Error: Unable to execute" << endl;
+        return;
+    }  
+    string command = "mount " + source + " " + dest;
+    system(command.c_str()); 
+    #endif
+}
+
+void umountCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    if (args.size() < 2)
+    {
+        cout << "Error: Unable to execute!" << endl;
+        return;
+    }  
+    string command = "mount " + source;
+    system(command.c_str()); 
+    #endif
+}
+
+void iptablesCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 2)
+    {
+        cout << "Error: Unable to execute"<<endl;
+        return;
+    }
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    string command = "iptables " + source;
+    system(command.c_str());
+    cout << "Execution successful" << endl;
+    #endif 
+}
+
+void initCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 2)
+    {
+        cout << "Error: Unable to execute";
+        return;
+    }
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    string command = "init " + source;
+    system(command.c_str());
+    #endif
 }
 
 void ifconfigCommand(const vector<string>& args) {
@@ -1062,14 +1179,24 @@ void manCommand(const vector<string>& args) {
         {"neofetch" , "NAME   neofetch - displays system information accompanied by ascii art\nSYNTAX neofetch"},
         {"screen" , "NAME   screen - opens another screen\nSYNTAX screen"},
         {"kill" , "NAME   kill - kills the process\nSYNTAX kill"},
+        {"service" , "NAME   service - manages system services\nSYNTAX service [service name] [start|stop|restart]"},
         {"play" , "NAME   play - plays music directly from terminal\nSYNTAX play"},
         {"stream" , "NAME   stream - plays video directly from terminal\nSYNTAX video"},
         {"top" , "NAME   top - displays real-time system resource usage\nSYNTAX top"},
+        {"htop" , "NAME   htop - provides detailed system performance information\nSYNTAX htop"},
+        {"http" , "NAME   http - opens a simple http server\nSYNTAX http"},
         {"ifconfig" , "NAME   ifconfig - lists all network interface configurations\nSYNTAX ifconfig"},
+        {"ifstat" , "NAME   ifstat - displays network interface statistics\nSYNTAX ifstat"},
+        {"iptables" , "NAME   iptables - administrates IP packet filter rules\nSYNTAX iptables [filename]"},
         {"shutdown" , "NAME   shutdown - shutdowns your system\nSYNTAX shutdown"},
         {"sysinfo" , "NAME  sysinfo - displays system information\nSYNTAX sysinfo"},
+        {"firefox" , "NAME  firefox - opens firefox from command line\nSYNTAX firefox"},
         {"about" , "NAME   about - provides information about the shell\nSYNTAX about"},
         {"math" , "NAME   math - assists any mathematical operation\nSYNTAX math"},
+        {"init" , "NAME   init - changes the runlevel of the system\nSYNTAX init [runlevel]"},
+        {"mount" , "NAME   mount - mounts filesystems\nSYNTAX mount [source] [destination]"},
+        {"umount" , "NAME   unmount - unmounts filesystems\nSYNTAX umount [source]"},
+        {"all" , "NAME   all - lists all services, whether they're running or not, with a + next to the ones that are.\nSYNTAX all"},
         {"inotify" , "NAME   inotify - monitor the specified directory and its subdirectories for create, delete, modify, and other events\nSYNTAX inotify [filename]"},
         {"rsync" , "NAME   rsync - syncs files and directories between two locations\nSYNTAX rsync [source] [destination]"},
         {"write" , "NAME   write - writes in a Microsoft Word compatible\nSYNTAX write [filename]"},
@@ -1091,7 +1218,6 @@ void manCommand(const vector<string>& args) {
     }
     
 }
-
 
 void neofetchCommand() {
     #ifdef __linux__
@@ -1115,6 +1241,26 @@ void netstatInstall() {
     #endif
 }
 
+void httpSnapInstall() {
+    string command = "sudo snap install http";
+    system(command.c_str());
+    cout << "INSTALLATION SUCCESS" << endl;
+}
+
+void httpCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string cmd = args[1];
+    cmd.erase(0, cmd.find_first_not_of(" \t"));
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    string command = "http " + cmd;
+    if (system(command.c_str()) != 0) {
+        cout << "Error: Unable to execute. Check if there is https before the url" << endl;
+    }
+    cout << "Command execution success" << endl;
+    #endif
+
+}
+
 void neofetchDisplay() {
     #ifdef __linux__
     setenv("USER", ".nyan", 1);
@@ -1129,12 +1275,18 @@ void neofetchTerminalDisplay(const vector<string>& args) {
     #endif
 }
 
-void braveInstall() {
+void firefoxInstall() {
     #ifdef __linux__
-    string command = "sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg";
+    string command;
+    command = "sudo apt install firefox";
     system(command.c_str());
-    cout << "BRAVE INSTALLATION SUCCESS" << endl;
+    cout << "FIREFOX INSTALLATION SUCCESS" << endl;
     #endif
+}
+
+void firefoxCommand(const vector<string>& args) {
+    string command = "firefox";
+    system(command.c_str());
 }
 
 void inotifyCommand(const vector<string>& args) {
@@ -1280,7 +1432,7 @@ void aboutCommand(const vector<string>& args) {
     cout << "A shell written in cpp language and is powered by apt package manager" << endl;
     cout << "Suitable for cross platforms, but not entirely" << endl;
     cout << "More suited for Linux" << endl; 
-    cout << "Have an inbuilt brave browser" << endl;
+    cout << "Supported by an inbuilt firefox browser" << endl;
 }
 
 int countWords(const string& input) {
@@ -1375,6 +1527,17 @@ int main() {
     commandRegister["sysinfo"] = sysinfoCommand;
     commandRegister["less"] = lessCommand;
     commandRegister["inotify"] = inotifyCommand;
+    commandRegister["iptables"] = iptablesCommand;
+    commandRegister["init"] = initCommand;
+    commandRegister["firefox"] = firefoxCommand;
+    commandRegister["ifstat"] = ifstatCommand;
+    commandRegister["htop"] = htopCommand;
+    commandRegister["http"] = httpCommand;
+    commandRegister["watch"] = watchCommand;
+    commandRegister["umount"] = umountCommand;
+    commandRegister["mount"] = mountCommand;
+    commandRegister["all"] = allCommand;
+    commandRegister["service"] = serviceCommand;
 
     #ifdef __linux__
     aptInstall();
@@ -1383,8 +1546,9 @@ int main() {
     xsysinfo();
     gitInstall();
     libreOfficeInstall();
+    httpSnapInstall();
     inotifytoolsInstall();
-    braveInstall();
+    firefoxInstall();
     netstatInstall();
     cout << "\x1B[2J\x1B[H";
     neofetchCommand();
