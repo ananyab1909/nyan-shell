@@ -1099,6 +1099,133 @@ void umountCommand(const vector<string>& args) {
     #endif
 }
 
+void tarCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string argString;
+    for (const auto& arg : args) {
+        if (!argString.empty()) {
+            argString += " ";
+        }
+        argString += arg;
+    }
+    string source = args[0];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string cmd = args[1];
+    cmd.erase(0, cmd.find_first_not_of(" \t")); 
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    if (source == "tar") {
+        if (args.size() == 3) {
+            string cmd1 = args[2];
+            cmd1.erase(0, cmd1.find_first_not_of(" \t")); 
+            cmd1.erase(cmd1.find_last_not_of(" \t") + 1);
+            string command;
+            if (cmd == "-xvf") {
+                command = source + " " + cmd + " " + cmd1;
+                system(command.c_str()); 
+            }
+            else if (cmd == "-tvf") {
+                string command = source + " " + cmd + " " + cmd1;
+                system(command.c_str());
+            }
+            else {
+                cout << "Incorrect syntax" << endl;
+            }
+        }
+        else if (args.size() > 3)
+        {
+            if (cmd == "-cvf") {
+                system(argString.c_str());
+            }
+            else {
+                cout << "INCORRECT SYNTAX" << endl;
+            }
+        }
+        else {
+            cout << "INCORRECT SYNTAX" << endl;
+        }
+    }
+    else {
+        cout << "Error: Incorrect command" << endl;
+    }
+    #endif
+}
+
+void tailCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string argString;
+    for (const auto& arg : args) {
+        if (!argString.empty()) {
+            argString += " ";
+        }
+        argString += arg;
+    }
+    string source = args[0];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string cmd = args[1];
+    cmd.erase(0, cmd.find_first_not_of(" \t")); 
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    if (source == "tail") {
+        if (cmd == "-f") {
+            system(argString.c_str());
+        }
+        else if (cmd == "-n") {
+            system(argString.c_str());
+        }
+        else if (cmd == "-q") {
+            system(argString.c_str());
+        }
+        else {
+            ifstream file(cmd);
+            if (!file) {
+                cout << "Error: File does not exist!" << endl;
+            }
+            else {
+                system(argString.c_str());
+            }
+        }
+    }
+    #endif
+}
+
+void lnCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 3)
+    {
+        cout << "Error: Unable to execute" << endl;
+        return;
+    }
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string cmd = args[2];
+    cmd.erase(0, cmd.find_first_not_of(" \t")); 
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    string command = "ln -s " + source + " " + cmd;
+    system(command.c_str());
+    cout << "Executed successfully" << endl;
+    #endif
+}
+
+void sedCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string source = args[0];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string cmd = args[1];
+    cmd.erase(0, cmd.find_first_not_of(" \t")); 
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    if (args.size() < 3)
+    {
+        cout << "Error: Unable to execute" << endl;
+        return;
+    }
+    string command = "sed '" + source + "' " + cmd;
+    system(command.c_str());
+    #endif
+}
+
 void iptablesCommand(const vector<string>& args) {
     #ifdef __linux__
     if (args.size() < 2)
@@ -1179,11 +1306,14 @@ void manCommand(const vector<string>& args) {
         {"neofetch" , "NAME   neofetch - displays system information accompanied by ascii art\nSYNTAX neofetch"},
         {"screen" , "NAME   screen - opens another screen\nSYNTAX screen"},
         {"kill" , "NAME   kill - kills the process\nSYNTAX kill"},
+        {"tcpdump" , "NAME   tcpdump - works as a command-line packet analyzer\nSYNTAX tcpdump [options]"},
         {"service" , "NAME   service - manages system services\nSYNTAX service [service name] [start|stop|restart]"},
         {"play" , "NAME   play - plays music directly from terminal\nSYNTAX play"},
         {"stream" , "NAME   stream - plays video directly from terminal\nSYNTAX video"},
         {"top" , "NAME   top - displays real-time system resource usage\nSYNTAX top"},
         {"htop" , "NAME   htop - provides detailed system performance information\nSYNTAX htop"},
+        {"ln" , "NAME   ln - creates a symbolic link\nSYNTAX ln [target] [linkname]"},
+        {"sed" , "NAME   sed - performs text transformations\nSYNTAX sed [expression] [file]"},
         {"http" , "NAME   http - opens a simple http server\nSYNTAX http"},
         {"ifconfig" , "NAME   ifconfig - lists all network interface configurations\nSYNTAX ifconfig"},
         {"ifstat" , "NAME   ifstat - displays network interface statistics\nSYNTAX ifstat"},
@@ -1201,6 +1331,8 @@ void manCommand(const vector<string>& args) {
         {"inotify" , "NAME   inotify - monitor the specified directory and its subdirectories for create, delete, modify, and other events\nSYNTAX inotify [filename]"},
         {"rsync" , "NAME   rsync - syncs files and directories between two locations\nSYNTAX rsync [source] [destination]"},
         {"write" , "NAME   write - writes in a Microsoft Word compatible\nSYNTAX write [filename]"},
+        {"tar" , "NAME   tar - manages archives for backup and restoration\nSYNTAX tar [command] [filename]"},
+        {"tail" , "NAME   tail - follows the tail of a file (real-time update)\nSYNTAX tail [command] [filename]"},
         {"excel" , "NAME   excel - makes spreadsheets in a Microsoft Excel compatible\nSYNTAX excel [filename]"},
         {"presentation" , "NAME   presentation - makes slides in a Microsoft Powerpoint compatible\nSYNTAX presentation [filename]"},
         {"netstat" , "NAME   netstat - display information about active network connections, routing tables, and interface statistics\nSYNTAX netstat"},
@@ -1403,6 +1535,19 @@ void gitCommand(const vector<string>& args) {
     #endif
 }
 
+void tcpdumpCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string argString;
+    for (const auto& arg : args) {
+        if (!argString.empty()) {
+            argString += " ";
+        }
+        argString += arg;
+    }
+    system(argString.c_str());
+    #endif
+}
+
 void libreOfficeInstall() {
     string command = "sudo apt install libreoffice";
     system(command.c_str());
@@ -1574,6 +1719,11 @@ int main() {
     commandRegister["all"] = allCommand;
     commandRegister["service"] = serviceCommand;
     commandRegister["traceroute"] = tracerouteCommand;
+    commandRegister["tar"] = tarCommand;
+    commandRegister["tail"] = tailCommand;
+    commandRegister["sed"] = sedCommand;
+    commandRegister["ln"] = lnCommand;
+    commandRegister["tcpdump"] = tcpdumpCommand;
 
     #ifdef __linux__
     aptInstall();
