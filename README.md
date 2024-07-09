@@ -78,7 +78,6 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`sed`**: Performs text transformations.
 - **`service`**: Manages system services.
 - **`shutdown`**: Shuts down or reboots the system.
-- **`sql`**: Executes SQL commands or scripts.
 - **`ssh`**: Connects to a host via Secure Shell.
 - **`sort`**: Sorts the contents of a file.
 - **`sysinfo`**: Displays system information.
