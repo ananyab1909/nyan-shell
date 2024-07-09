@@ -608,7 +608,41 @@ void chmodCommand(const vector<string>& args) {
         return;
     }
     cout << "Permissions changed successfully!" << endl;
+}
 
+void chownCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 3)
+    {
+        cout << "Error: chown command only expects three arguements" <<endl;
+    } 
+    string owner = args[1];
+    owner.erase(0, owner.find_first_not_of(" \t")); 
+    owner.erase(owner.find_last_not_of(" \t") + 1);
+    string file = args[2];
+    file.erase(0, file.find_first_not_of(" \t")); 
+    file.erase(file.find_last_not_of(" \t") + 1);
+    string command = "chown " + owner + " " + file;
+    system(command.c_str());
+    #endif
+}
+
+void chgrpCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 3)
+    {
+        cout << "Error: chgrp command expects three arguements";
+        return;
+    }
+    string owner = args[1];
+    owner.erase(0, owner.find_first_not_of(" \t")); 
+    owner.erase(owner.find_last_not_of(" \t") + 1);
+    string file = args[2];
+    file.erase(0, file.find_first_not_of(" \t")); 
+    file.erase(file.find_last_not_of(" \t") + 1);
+    string command = "chgrp " + owner + " " + file;
+    system(command.c_str());
+    #endif
 }
 
 void uptimeCommand(const vector<string>& args) {
@@ -1252,6 +1286,57 @@ void lnCommand(const vector<string>& args) {
     #endif
 }
 
+void grepCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 3)
+    {
+        cout << "Error: grep command expects only two arguements" << endl;
+        return;
+    }
+    string source = args[2];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    ifstream file(source);
+    string line;
+    if (file.is_open())
+    {
+        while (getline(file, line))
+        {
+            if (line.find(args[1]) != string::npos)
+            {
+                cout << line << "\n";
+            }
+        }
+        file.close();
+    }
+    else {
+        cout << "Unable to open file" << endl;
+    }
+    #endif
+}
+
+void cronCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "crontab ";
+    if (args.size() > 1)
+    {
+        command += args[1];
+    }
+    system(command.c_str());
+    #endif
+}
+
+void awkCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string command = "awk ";
+    for (int i = 1; i < args.size(); i++)
+    {
+        command += args[i] + " ";
+    }
+    system(command.c_str());
+    #endif
+}
+
 void sedCommand(const vector<string>& args) {
     #ifdef __linux__
     string source = args[0];
@@ -1309,6 +1394,39 @@ void ifconfigCommand(const vector<string>& args) {
     #endif
 }
 
+void pingCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 2)
+    {
+        cout << "Error: ping commands only expects one arguement" << endl;
+        return;
+    }
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string command = "ping -c 4 " + source; 
+    system(command.c_str());
+    #endif
+}
+
+void findCommand(const vector<string>& args) {
+    #ifdef __linux__
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1); 
+    string cmd = args[2];
+    cmd.erase(0, cmd.find_first_not_of(" \t")); 
+    cmd.erase(cmd.find_last_not_of(" \t") + 1);
+    if (args.size() < 3)
+        {
+            cout << "Error: find command only expects two arguements" << endl;
+            return;
+        }
+    string command = "find " + source + " -name \"" + cmd + "\"";
+    system(command.c_str()); 
+    #endif
+}
+
 void manCommand(const vector<string>& args) {
     static const map<string, string> commandHelp = {
         {"pwd", "NAME  pwd - print name of current/working directory\nSYNTAX  pwd"},
@@ -1331,6 +1449,8 @@ void manCommand(const vector<string>& args) {
         {"gzip", "NAME  gzip - compress or expand files\nSYNTAX  gzip [filename]"},
         {"history", "NAME  history - GNU History Library\nSYNTAX  history"},
         {"chmod", "NAME  chmod - change file mode bits\nSYNTAX chmod [permission octal digits] [filename]"},
+        {"chown", "NAME  chown - changes file owner and group\nSYNTAX chown [owner][:group] [file]"},
+        {"chgrp", "NAME  chgrp - changes the group ownership of a file\nSYNTAX chgrp [group] [file]"},
         {"hexdump", "NAME  hexdump - display file contents in octal\nSYNTAX  hexdump [filename]"},
         {"ps", "NAME  ps - report a snapshot of the current processes\nSYNTAX  ps"},
         {"wc", "NAME  wc - print newline, word, and byte counts for each file\nSYNTAX  wc [filename]"},
@@ -1350,17 +1470,21 @@ void manCommand(const vector<string>& args) {
         {"neofetch" , "NAME   neofetch - displays system information accompanied by ascii art\nSYNTAX neofetch"},
         {"screen" , "NAME   screen - opens another screen\nSYNTAX screen"},
         {"kill" , "NAME   kill - kills the process\nSYNTAX kill"},
+        {"awk" , "NAME   awk - program for pattern scanning and processing\nSYNTAX awk"},
         {"ssh" , "NAME   ssh - connects to a host via SSH\nSYNTAX ssh [user@hostname] [options]"},
         {"nmap" , "NAME   nmap - network exploration tool and security scanner\nSYNTAX nmap [options]"},
         {"tcpdump" , "NAME   tcpdump - works as a command-line packet analyzer\nSYNTAX tcpdump [options]"},
         {"service" , "NAME   service - manages system services\nSYNTAX service [service name] [start|stop|restart]"},
         {"play" , "NAME   play - plays music directly from terminal\nSYNTAX play"},
         {"stream" , "NAME   stream - plays video directly from terminal\nSYNTAX video"},
+        {"find" , "NAME   find - searches for files matching a pattern\nSYNTAX find [directory] [pattern]"},
         {"top" , "NAME   top - displays real-time system resource usage\nSYNTAX top"},
         {"htop" , "NAME   htop - provides detailed system performance information\nSYNTAX htop"},
         {"ln" , "NAME   ln - creates a symbolic link\nSYNTAX ln [target] [linkname]"},
         {"sed" , "NAME   sed - performs text transformations\nSYNTAX sed [expression] [file]"},
         {"http" , "NAME   http - opens a simple http server\nSYNTAX http"},
+        {"mysql" , "NAME   mysql - executes MySQL commands\nSYNTAX sudo mysql -u root -p\nTo check version prompt 'mysql --version'"},
+        {"cron" , "NAME   cron - manages cron jobs\nSYNTAX cron [filename]"},
         {"ifconfig" , "NAME   ifconfig - lists all network interface configurations\nSYNTAX ifconfig"},
         {"ifstat" , "NAME   ifstat - displays network interface statistics\nSYNTAX ifstat"},
         {"iptables" , "NAME   iptables - administrates IP packet filter rules\nSYNTAX iptables [filename]"},
@@ -1369,6 +1493,8 @@ void manCommand(const vector<string>& args) {
         {"firefox" , "NAME  firefox - opens firefox from command line\nSYNTAX firefox"},
         {"about" , "NAME   about - provides information about the shell\nSYNTAX about"},
         {"math" , "NAME   math - assists any mathematical operation\nSYNTAX math"},
+        {"ping" , "NAME   ping - checks network connectivity to a host\nSYNTAX ping [host]"},
+        {"grep" , "NAME   grep - searches for a text pattern within a file\nSYNTAX grep [pattern] [file]"},
         {"traceroute" , "NAME   traceroute - traces the route packets take to a network host\nSYNTAX traceroute [host]"},
         {"init" , "NAME   init - changes the runlevel of the system\nSYNTAX init [runlevel]"},
         {"mount" , "NAME   mount - mounts filesystems\nSYNTAX mount [source] [destination]"},
@@ -1395,7 +1521,6 @@ void manCommand(const vector<string>& args) {
     } else {
         cout << "Error: unknown command" << endl;
     }
-    
 }
 
 void neofetchCommand() {
@@ -1594,6 +1719,33 @@ void tcpdumpCommand(const vector<string>& args) {
     #endif
 }
 
+void mysqlCommand(const vector<string>& args) {
+    #ifdef __linux__
+    cout << "Please prompt your sudo password" << endl;
+    string argString;
+    for (const auto& arg : args) {
+        if (!argString.empty()) {
+            argString += " ";
+        }
+        argString += arg;
+    }
+    if (argString == "mysql --version") {
+        system(argString.c_str());
+    } 
+    else if (argString == "mysql -u root -p") {
+        system(argString.c_str());
+    }
+    else {
+        cout << "Incorrect Command" << endl;
+    }
+    #endif
+}
+
+void mysqlInstall() {
+    string command = "sudo apt-get install mysql-server";
+    system(command.c_str());
+}
+
 void libreOfficeInstall() {
     string command = "sudo apt install libreoffice";
     system(command.c_str());
@@ -1659,6 +1811,7 @@ void aboutCommand(const vector<string>& args) {
     cout << "Suitable for cross platforms, but not entirely" << endl;
     cout << "More suited for Linux" << endl; 
     cout << "Supported by an inbuilt firefox browser" << endl;
+    cout << "Executes MySQL commands with the help of the inbuilt mysql server" << endl;
 }
 
 int countWords(const string& input) {
@@ -1772,11 +1925,20 @@ int main() {
     commandRegister["tcpdump"] = tcpdumpCommand;
     commandRegister["ssh"] = sshCommand;
     commandRegister["nmap"] = nmapCommand;
+    commandRegister["find"] = findCommand;
+    commandRegister["grep"] = grepCommand;
+    commandRegister["cron"] = cronCommand;
+    commandRegister["chgrp"] = chgrpCommand;
+    commandRegister["chown"] = chownCommand;
+    commandRegister["mysql"] = mysqlCommand;
+    commandRegister["ping"] = pingCommand;
+    commandRegister["awk"] = awkCommand;
 
     #ifdef __linux__
     aptInstall();
     pythonInstall();
     musicInstall();
+    mysqlInstall();
     xsysinfo();
     gitInstall();
     libreOfficeInstall();
