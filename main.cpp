@@ -1483,7 +1483,7 @@ void manCommand(const vector<string>& args) {
         {"ln" , "NAME   ln - creates a symbolic link\nSYNTAX ln [target] [linkname]"},
         {"sed" , "NAME   sed - performs text transformations\nSYNTAX sed [expression] [file]"},
         {"http" , "NAME   http - opens a simple http server\nSYNTAX http"},
-        {"mysql" , "NAME   mysql - executes MySQL commands\nSYNTAX sudo mysql -u root -p\nTo check version prompt 'mysql --version'"},
+        {"mysql" , "NAME   mysql - opens MySQL server to execute commands\nSYNTAX mysql\nTo check version prompt 'mysql --version'"},
         {"cron" , "NAME   cron - manages cron jobs\nSYNTAX cron [filename]"},
         {"ifconfig" , "NAME   ifconfig - lists all network interface configurations\nSYNTAX ifconfig"},
         {"ifstat" , "NAME   ifstat - displays network interface statistics\nSYNTAX ifstat"},
@@ -1721,7 +1721,7 @@ void tcpdumpCommand(const vector<string>& args) {
 
 void mysqlCommand(const vector<string>& args) {
     #ifdef __linux__
-    cout << "Please prompt your sudo password" << endl;
+    cout << "Please prompt your mysql password" << endl; // Assuming mysql is installed 
     string argString;
     for (const auto& arg : args) {
         if (!argString.empty()) {
@@ -1732,8 +1732,9 @@ void mysqlCommand(const vector<string>& args) {
     if (argString == "mysql --version") {
         system(argString.c_str());
     } 
-    else if (argString == "mysql -u root -p") {
-        system(argString.c_str());
+    else if (argString == "mysql") {
+        string command = "sudo mysql -u root -p";
+        system(command.c_str());
     }
     else {
         cout << "Incorrect Command" << endl;
