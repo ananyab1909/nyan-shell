@@ -18,6 +18,7 @@ A Command-Line Shell made using C++.
 Here is a list of commands supported by `nyan` along with their brief descriptions:
 
 - **`bash`**: Executes a bash script or command.
+- **`awk`**: Program for pattern scanning and processing.
 - **`cat`**: Displays the content of a file.
 - **`cd`**: Changes the current directory.
 - **`cd ..`**: Goes back to the previous directory.
@@ -36,6 +37,7 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`find`**: Searches for files matching a pattern.
 - **`free`**: Displays the amount of free and used memory in the system.
 - **`git`**: Executes Git commands for version control.
+- **`ping`**: Checks network connectivity to a host.
 - **`grep`**: Searches for a text pattern within a file.
 - **`gzip`**: Compresses or decompresses files using gzip.
 - **`hexdump`**: Displays file content in hexadecimal format.
