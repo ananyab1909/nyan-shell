@@ -66,7 +66,7 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`pwd`**: Prints the current directory.
 - **`python`**: Executes Python scripts or commands.
 - **`play`**: Plays audio files from the command line.
-- **`video`**: Plays video files from the command line.
+- **`stream`**: Plays video files from the command line.
 - **`write`**: Opens a Microsoft Word compatible.
 - **`presentation`**: Opens a Microsoft Power Point compatible.
 - **`excel`**: Opens a Microsoft Excel compatible.
