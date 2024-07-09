@@ -17,10 +17,10 @@ A Command-Line Shell made using C++.
 
 Here is a list of commands supported by `nyan` along with their brief descriptions:
 
-- **`awk`**: A program for pattern scanning and processing.
 - **`bash`**: Executes a bash script or command.
 - **`cat`**: Displays the content of a file.
 - **`cd`**: Changes the current directory.
+- **`cd ..`**: Goes back to the previous directory.
 - **`chgrp`**: Changes the group ownership of a file.
 - **`chmod`**: Changes file permissions.
 - **`chown`**: Changes file owner and group.
@@ -32,11 +32,9 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`du`**: Analyzes disk space usage.
 - **`echo`**: Echoes text to the terminal.
 - **`env`**: Displays, sets, or gets environment variables.
-- **`envlist`**: Lists all environment variables.
-- **`exec`**: Executes scripts or other programs.
+- **`exec`**: Complies and executes c++ files.
 - **`find`**: Searches for files matching a pattern.
 - **`free`**: Displays the amount of free and used memory in the system.
-- **`g++`**: Compiles C++ source files.
 - **`git`**: Executes Git commands for version control.
 - **`grep`**: Searches for a text pattern within a file.
 - **`gzip`**: Compresses or decompresses files using gzip.
@@ -49,12 +47,11 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`inotify`**: Watches file system changes in real time.
 - **`iptables`**: Administrates IP packet filter rules.
 - **`kill`**: Sends a signal to a process.
-- **`last`**: Shows a list of last logged in users.
 - **`less`**: Views file contents interactively.
 - **`ln`**: Creates a symbolic link.
 - **`login`**: Logs in as a specified user.
 - **`ls`**: Lists files in the current or specified directory.
-- **`ll`**: Lists all files in detail in the current or specified directory.
+- **`ls -l`**: Lists all files in detail in the current or specified directory.
 - **`man`**: Displays user manual of any command.
 - **`mkdir`**: Creates a new directory.
 - **`mount`**: Mounts filesystems.
@@ -64,10 +61,15 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`nmap`**: Network exploration tool and security scanner.
 - **`netstat`**: Shows network statistics.
 - **`ps`**: Displays currently running processes.
-- **`psaux`**: Detailed view of currently running processes.
 - **`pwd`**: Prints the current directory.
 - **`python`**: Executes Python scripts or commands.
 - **`play`**: Plays audio files from the command line.
+- **`video`**: Plays video files from the command line.
+- **`write`**: Opens a Microsoft Word compatible.
+- **`presentation`**: Opens a Microsoft Power Point compatible.
+- **`excel`**: Opens a Microsoft Excel compatible.
+- **`math`**: Assists in any complex mathematical operations.
+- **`firefox`**: Opens firefox from command line.
 - **`rm`**: Deletes a specified file.
 - **`rsync`**: Syncs files and directories between two locations.
 - **`screen`**: Starts a screen session for managing multiple terminal sessions.
@@ -92,7 +94,15 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`wc`**: Counts lines, words, and characters in a file.
 - **`watch`**: Executes a command repeatedly, displaying the output.
 - **`wget`**: Downloads files from the internet.
-- **`who`**: Displays who is logged on.
+- **`whoami`**: Displays who is logged on.
+- **`active`**: Displays the presently logged in users.
+- **`users`**: Displays all the previous users irrespective whether they are logged in or not.
+- **`logout`**: Logout from the currently logged in user.
+- **`cls`**: Clears the screen.
+- **`clear`**: Clears the screen.
+- **`neofetch`**: Displays system information.
+- **`about`**: Provides information about the shell.
+
 
 ## About Me
 Hello, my name is Ananya Biswas. I am an Engineering Student at [Kalinga Institute of Industrial Technology](https://kiit.ac.in/). I enjoy making teeny tiny projects in
