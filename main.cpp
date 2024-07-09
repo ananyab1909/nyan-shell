@@ -1125,7 +1125,11 @@ void tarCommand(const vector<string>& args) {
                 system(command.c_str()); 
             }
             else if (cmd == "-tvf") {
-                string command = source + " " + cmd + " " + cmd1;
+                command = source + " " + cmd + " " + cmd1;
+                system(command.c_str());
+            }
+            else if (cmd == "-cvf") {
+                command = source + " " + cmd + " " + cmd1;
                 system(command.c_str());
             }
             else {
@@ -1186,6 +1190,46 @@ void tailCommand(const vector<string>& args) {
             }
         }
     }
+    #endif
+}
+
+void sshCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 2)
+    {
+        cout << "Error: ssh command only expects one arguement" << endl;
+        return;
+    }
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string command = "ssh " + source;
+    for (size_t i = 2; i < args.size(); ++i)
+    {
+        command += " " + args[i];
+    }
+    system(command.c_str());
+    cout << "COMMAND EXECUTION SUCCESS!" << endl;
+    #endif
+}
+
+void nmapCommand(const vector<string>& args) {
+    #ifdef __linux__
+    if (args.size() < 2)
+    {
+        cout << "Error: nmap command only expects one arguement" << endl;
+        return;
+    }
+    string source = args[1];
+    source.erase(0, source.find_first_not_of(" \t")); 
+    source.erase(source.find_last_not_of(" \t") + 1);
+    string command = "nmap " + source;
+    for (size_t i = 2; i < args.size(); ++i)
+    {
+        command += " " + args[i];
+    }
+    system(command.c_str());
+    cout << "COMMAND EXECUTION SUCCESS!" << endl;
     #endif
 }
 
@@ -1306,6 +1350,8 @@ void manCommand(const vector<string>& args) {
         {"neofetch" , "NAME   neofetch - displays system information accompanied by ascii art\nSYNTAX neofetch"},
         {"screen" , "NAME   screen - opens another screen\nSYNTAX screen"},
         {"kill" , "NAME   kill - kills the process\nSYNTAX kill"},
+        {"ssh" , "NAME   ssh - connects to a host via SSH\nSYNTAX ssh [user@hostname] [options]"},
+        {"nmap" , "NAME   nmap - network exploration tool and security scanner\nSYNTAX nmap [options]"},
         {"tcpdump" , "NAME   tcpdump - works as a command-line packet analyzer\nSYNTAX tcpdump [options]"},
         {"service" , "NAME   service - manages system services\nSYNTAX service [service name] [start|stop|restart]"},
         {"play" , "NAME   play - plays music directly from terminal\nSYNTAX play"},
@@ -1724,6 +1770,8 @@ int main() {
     commandRegister["sed"] = sedCommand;
     commandRegister["ln"] = lnCommand;
     commandRegister["tcpdump"] = tcpdumpCommand;
+    commandRegister["ssh"] = sshCommand;
+    commandRegister["nmap"] = nmapCommand;
 
     #ifdef __linux__
     aptInstall();
