@@ -84,7 +84,7 @@ Here is a list of commands supported by `nyan` along with their brief descriptio
 - **`tar`**: Manages archives for backup and restoration.
 - **`tail`**: Follows the tail of a file (real-time update).
 - **`tcpdump`**: Command-line packet analyzer.
-- **`touch`**: Updates the access and modification times of a file.
+- **`touch`**: Creates an empty file.
 - **`traceroute`**: Traces the route packets take to a network host.
 - **`top`**: Displays real-time system resource usage.
 - **`umount`**: Unmounts filesystems.
